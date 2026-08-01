@@ -828,7 +828,8 @@ document.addEventListener('DOMContentLoaded', () => {
         categoryModal.style.display = 'block';
 
         try {
-            const url = catId ? `/api/category?id=${catId}&name=${encodeURIComponent(catName)}` : `/api/category?name=${encodeURIComponent(catName)}`;
+            const validId = (catId && catId !== 'null' && catId !== 'undefined') ? catId : null;
+            const url = validId ? `/api/category?id=${validId}&name=${encodeURIComponent(catName)}` : `/api/category?name=${encodeURIComponent(catName)}`;
             const res = await fetch(url);
             const data = await res.json();
 
