@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181428"/>
+      <stop offset="50%" stop-color="#0c0a14"/>
+      <stop offset="100%" stop-color="#05040a"/>
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a970ff"/>
+      <stop offset="100%" stop-color="#9146ff"/>
+    </linearGradient>
+    <linearGradient id="pinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff0085"/>
+      <stop offset="100%" stop-color="#ff4da6"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background Shield Container -->
+  <rect width="512" height="512" rx="120" fill="url(#bgGrad)" stroke="rgba(145, 70, 255, 0.4)" stroke-width="8"/>
+
+  <!-- Glowing Ambient Orb behind icon -->
+  <circle cx="256" cy="256" r="160" fill="#9146ff" opacity="0.25" filter="url(#glow)"/>
+
+  <!-- Twitch Glitch Icon + Growth Trend Arrow -->
+  <g transform="translate(96, 96)">
+    <!-- Twitch Body -->
+    <path d="M50 0 L15 35 V245 H75 V280 L110 245 H155 L230 170 V0 H50 Z" fill="url(#purpleGrad)" filter="url(#glow)"/>
+    <!-- Inner Cutouts -->
+    <path d="M75 35 H205 V155 L170 190 H120 L95 215 V190 H75 V35 Z" fill="#0c0a14"/>
+    <!-- Eyes -->
+    <rect x="110" y="70" width="25" height="60" rx="6" fill="#ffffff"/>
+    <rect x="160" y="70" width="25" height="60" rx="6" fill="#ffffff"/>
+    
+    <!-- Analytics Trend Line overlay -->
+    <path d="M30 210 L100 140 L140 170 L250 50" fill="none" stroke="url(#pinkGrad)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+    <polygon points="250,50 210,50 250,90" fill="url(#pinkGrad)"/>
+  </g>
+</svg>

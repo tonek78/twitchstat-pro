@@ -1,0 +1,17 @@
+{
+    "name": "TwitchStats PRO - Streamer Analytics",
+    "short_name": "TwitchStats",
+    "description": "Professional Twitch streamer analytics, viewer trends, live status telemetry, and estimated subscriber breakdowns.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#070709",
+    "theme_color": "#9146FF",
+    "icons": [
+        {
+            "src": "/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}
