@@ -190,6 +190,40 @@
             </div>
         </section>
 
+        <!-- Category Analytics Modal (Hidden by default) -->
+        <section class="player-modal mb-4" id="categoryModal" style="display: none;">
+            <div class="player-modal-content glass-panel max-w-4xl">
+                <div class="player-modal-header d-flex justify-content-between align-items-center mb-3">
+                    <div class="player-title d-flex align-items-center gap-2">
+                        <span class="chart-icon">🎮</span>
+                        <h3 class="fs-5 m-0" id="categoryModalTitle">Kategória Analitika</h3>
+                    </div>
+                    <button id="closeCategoryModalBtn" class="btn btn-sm btn-outline-light">&times; <span data-i18n="close_btn">Bezárás</span></button>
+                </div>
+                <div class="category-modal-body">
+                    <div class="category-header-banner d-flex flex-column flex-md-row align-items-center gap-4 p-3 rounded bg-black-20 mb-4">
+                        <img id="categoryBoxArt" class="rounded shadow border border-secondary" src="" alt="Category Box Art" style="width: 100px; height: 133px; object-fit: cover;">
+                        <div class="category-header-info flex-grow-1 text-center text-md-start">
+                            <h2 id="categoryName" class="fs-3 fw-bold mb-2">Játék Neve</h2>
+                            <div class="category-stats-pills d-flex flex-wrap gap-3 justify-content-center justify-content-md-start">
+                                <div class="badge bg-purple-subtle text-purple border p-2 d-flex align-items-center gap-2 fs-6">
+                                    <span>👥</span> <span id="catTotalViewers">0</span> <span class="fw-normal" data-i18n="cat_viewers">Élő Néző</span>
+                                </div>
+                                <div class="badge bg-cyan-subtle text-cyan border p-2 d-flex align-items-center gap-2 fs-6">
+                                    <span>📺</span> <span id="catActiveStreams">0</span> <span class="fw-normal" data-i18n="cat_active_streams">Aktív Csatorna</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 class="fs-6 fw-bold mb-3 d-flex align-items-center gap-2" data-i18n="cat_top_streamers">Legnépszerűbb Élő Streamerek ebben a Kategóriában</h4>
+                    <div class="row g-3" id="categoryStreamersGrid">
+                        <!-- Dynamic Category Streamers Cards injected here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Dashboard Main Grid (Bootstrap Responsive Row) -->
         <main class="dashboard row g-4">
             <!-- Sidebar: Profile & Stream Details -->

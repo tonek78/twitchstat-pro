@@ -43,18 +43,25 @@ const translations = {
         widget_preview: "Widget Előnézet:",
         close_btn: "Bezárás",
 
+        // Category Search & Modal
+        section_channels: "Streamerek",
+        section_categories: "Kategóriák / Játékok",
+        cat_top_streamers: "Legnépszerűbb Élő Streamerek ebben a Kategóriában",
+        cat_viewers: "Élő Néző",
+        cat_active_streams: "Aktív Csatorna",
+
         // Toast Messages
         toast_fav_add: "{name} hozzáadva a kedvencekhez!",
         toast_fav_remove: "{name} eltávolítva a kedvencek közül.",
         toast_link_copied: "Profil hivatkozás másolva a vágólapra!",
         toast_embed_copied: "Widget beágyazó kód másolva a vágólapra!",
-        toast_not_found: "Nem található '{name}' nevű streamer.",
+        toast_not_found: "Nem található '{name}' nevű streamer vagy kategória.",
         toast_demo: "⚠️ Demó adatok (a .env-ben lévő Twitch Client Secret érvénytelen)."
     },
 
     en: {
         app_title: "TwitchStats PRO - Streamer Analytics",
-        search_placeholder: "Search streamer (e.g. TheVR, xQc, shroud)...",
+        search_placeholder: "Search streamer or category (e.g. TheVR, GTA V, Just Chatting)...",
         search_btn: "Search",
         popular_label: "Popular:",
         favorites_title: "Favorites:",
@@ -94,18 +101,25 @@ const translations = {
         widget_preview: "Widget Preview:",
         close_btn: "Close",
 
+        // Category Search & Modal
+        section_channels: "Streamers",
+        section_categories: "Categories / Games",
+        cat_top_streamers: "Top Live Streamers in this Category",
+        cat_viewers: "Live Viewers",
+        cat_active_streams: "Active Streams",
+
         // Toast Messages
         toast_fav_add: "{name} added to favorites!",
         toast_fav_remove: "{name} removed from favorites.",
         toast_link_copied: "Profile link copied to clipboard!",
         toast_embed_copied: "Widget embed code copied to clipboard!",
-        toast_not_found: "Streamer '{name}' not found.",
+        toast_not_found: "Streamer or Category '{name}' not found.",
         toast_demo: "⚠️ Demo mode (Twitch Client Secret in .env is invalid)."
     },
 
     de: {
         app_title: "TwitchStats PRO - Streamer Analytik",
-        search_placeholder: "Streamer suchen (z. B. Papaplatte, xQc, shroud)...",
+        search_placeholder: "Streamer oder Kategorie suchen (z. B. GTA V, Just Chatting)...",
         search_btn: "Suchen",
         popular_label: "Beliebt:",
         favorites_title: "Favoriten:",
@@ -145,12 +159,19 @@ const translations = {
         widget_preview: "Widget Vorschau:",
         close_btn: "Schließen",
 
+        // Category Search & Modal
+        section_channels: "Streamer",
+        section_categories: "Kategorien / Spiele",
+        cat_top_streamers: "Top-Live-Streamer in dieser Kategorie",
+        cat_viewers: "Live-Zuschauer",
+        cat_active_streams: "Aktive Streams",
+
         // Toast Messages
         toast_fav_add: "{name} zu Favoriten hinzugefügt!",
         toast_fav_remove: "{name} aus Favoriten entfernt.",
         toast_link_copied: "Profil-Link in Zwischenablage kopiert!",
         toast_embed_copied: "Einbettungscode in Zwischenablage kopiert!",
-        toast_not_found: "Streamer '{name}' nicht gefunden.",
+        toast_not_found: "Streamer oder Kategorie '{name}' nicht gefunden.",
         toast_demo: "⚠️ Demo-Modus (Twitch Client Secret in .env ist ungültig)."
     }
 };

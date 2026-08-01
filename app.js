@@ -699,7 +699,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let searchDebounceTimer = null;
     let selectedSuggestionIndex = -1;
 
-    // --- SEARCH AUTOCOMPLETE DROPDOWN ---
+    // --- SEARCH AUTOCOMPLETE DROPDOWN (Channels & Categories) ---
     async function fetchSearchSuggestions(query) {
         if (!query || query.length < 2) {
             hideSuggestions();
@@ -710,8 +710,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
             const data = await res.json();
 
-            if (data && data.channels && data.channels.length > 0) {
-                renderSuggestions(data.channels);
+            const hasChannels = data && data.channels && data.channels.length > 0;
+            const hasCategories = data && data.categories && data.categories.length > 0;
+
+            if (hasChannels || hasCategories) {
+                renderSuggestions(data);
             } else {
                 hideSuggestions();
             }
@@ -720,34 +723,75 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderSuggestions(channels) {
+    function renderSuggestions(data) {
         searchSuggestionsEl.innerHTML = '';
         selectedSuggestionIndex = -1;
 
-        channels.forEach((ch, idx) => {
-            const item = document.createElement('div');
-            item.className = 'suggestion-item';
-            item.setAttribute('data-login', ch.login);
-            item.setAttribute('data-name', ch.name);
-            item.innerHTML = `
-                <div class="suggestion-main">
-                    <img class="suggestion-avatar" src="${ch.avatar}" alt="${ch.name}">
-                    <div class="suggestion-info">
-                        <span class="suggestion-name">${ch.name}</span>
-                        <span class="suggestion-game">${ch.game || 'Twitch Streamer'}</span>
+        const channels = data.channels || [];
+        const categories = data.categories || [];
+
+        // 1. Render Streamers Section
+        if (channels.length > 0) {
+            const header = document.createElement('div');
+            header.className = 'suggestion-header';
+            header.innerText = `💜 ${getText('section_channels')}`;
+            searchSuggestionsEl.appendChild(header);
+
+            channels.forEach((ch) => {
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+                item.innerHTML = `
+                    <div class="suggestion-main">
+                        <img class="suggestion-avatar" src="${ch.avatar}" alt="${ch.name}">
+                        <div class="suggestion-info">
+                            <span class="suggestion-name">${ch.name}</span>
+                            <span class="suggestion-game">${ch.game || 'Twitch Streamer'}</span>
+                        </div>
                     </div>
-                </div>
-                <span class="suggestion-status ${ch.is_live ? 'live' : 'offline'}">
-                    ${ch.is_live ? 'ÉLŐ' : 'OFFLINE'}
-                </span>
-            `;
+                    <span class="suggestion-status ${ch.is_live ? 'live' : 'offline'}">
+                        ${ch.is_live ? getText('live_badge') : getText('offline_badge')}
+                    </span>
+                `;
 
-            item.addEventListener('click', () => {
-                selectSuggestion(ch.login, ch.name);
+                item.addEventListener('click', () => {
+                    selectSuggestion(ch.login, ch.name);
+                });
+
+                searchSuggestionsEl.appendChild(item);
             });
+        }
 
-            searchSuggestionsEl.appendChild(item);
-        });
+        // 2. Render Categories Section
+        if (categories.length > 0) {
+            const catHeader = document.createElement('div');
+            catHeader.className = 'suggestion-header';
+            catHeader.innerText = `🎮 ${getText('section_categories')}`;
+            searchSuggestionsEl.appendChild(catHeader);
+
+            categories.forEach((cat) => {
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+                item.innerHTML = `
+                    <div class="suggestion-main">
+                        <img class="suggestion-boxart" src="${cat.box_art}" alt="${cat.name}">
+                        <div class="suggestion-info">
+                            <span class="suggestion-name">${cat.name}</span>
+                            <span class="suggestion-game">Twitch Kategória / Játék</span>
+                        </div>
+                    </div>
+                    <span class="badge bg-purple-subtle text-purple border font-normal fs-7">
+                        🎮 Játék
+                    </span>
+                `;
+
+                item.addEventListener('click', () => {
+                    hideSuggestions();
+                    openCategoryModal(cat.id, cat.name);
+                });
+
+                searchSuggestionsEl.appendChild(item);
+            });
+        }
 
         searchSuggestionsEl.style.display = 'block';
     }
@@ -763,6 +807,83 @@ document.addEventListener('DOMContentLoaded', () => {
         searchSuggestionsEl.style.display = 'none';
         searchSuggestionsEl.innerHTML = '';
         selectedSuggestionIndex = -1;
+    }
+
+    // --- CATEGORY ANALYTICS MODAL ---
+    const categoryModal = document.getElementById('categoryModal');
+    const closeCategoryModalBtn = document.getElementById('closeCategoryModalBtn');
+    const categoryNameEl = document.getElementById('categoryName');
+    const categoryBoxArtEl = document.getElementById('categoryBoxArt');
+    const catTotalViewersEl = document.getElementById('catTotalViewers');
+    const catActiveStreamsEl = document.getElementById('catActiveStreams');
+    const categoryStreamersGrid = document.getElementById('categoryStreamersGrid');
+
+    async function openCategoryModal(catId, catName) {
+        if (!categoryModal) return;
+
+        categoryNameEl.innerText = catName;
+        catTotalViewersEl.innerText = '...';
+        catActiveStreamsEl.innerText = '...';
+        categoryStreamersGrid.innerHTML = '<div class="col-12 text-center py-4 text-muted">A kategória adatainak betöltése...</div>';
+        categoryModal.style.display = 'block';
+
+        try {
+            const url = catId ? `/api/category?id=${catId}&name=${encodeURIComponent(catName)}` : `/api/category?name=${encodeURIComponent(catName)}`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            categoryNameEl.innerText = data.name || catName;
+            categoryBoxArtEl.src = data.box_art || 'https://static-cdn.jtvnw.net/ttv-boxart/509658-180x240.jpg';
+            catTotalViewersEl.innerText = formatNumber(data.total_viewers || 0);
+            catActiveStreamsEl.innerText = formatNumber(data.stream_count || 0);
+
+            renderCategoryStreamers(data.streams || []);
+        } catch (e) {
+            categoryStreamersGrid.innerHTML = '<div class="col-12 text-center py-4 text-danger">Nem sikerült betölteni a kategória adatait.</div>';
+        }
+    }
+
+    function renderCategoryStreamers(streams) {
+        categoryStreamersGrid.innerHTML = '';
+
+        if (!streams || streams.length === 0) {
+            categoryStreamersGrid.innerHTML = '<div class="col-12 text-center py-4 text-muted">Nincs aktív adás ebben a kategóriában.</div>';
+            return;
+        }
+
+        streams.forEach(st => {
+            const col = document.createElement('div');
+            col.className = 'col-12 col-sm-6 col-md-4 col-lg-3';
+            col.innerHTML = `
+                <div class="cat-stream-card p-3 h-100 d-flex flex-column justify-content-between gap-2" data-login="${st.user_login}">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <img class="suggestion-avatar" src="${st.avatar}" alt="${st.user_name}">
+                        <div class="overflow-hidden">
+                            <h5 class="m-0 fs-6 fw-bold text-truncate">${st.user_name}</h5>
+                            <span class="badge bg-danger p-1 fs-7">🔴 ${formatNumber(st.viewer_count)} néző</span>
+                        </div>
+                    </div>
+                    <p class="small text-muted text-truncate-2 m-0" style="font-size:0.78rem;">${st.title || 'Élő adás'}</p>
+                    <button class="btn btn-sm btn-outline-primary w-100 mt-2">
+                        <span>Statisztika megtekintése</span>
+                    </button>
+                </div>
+            `;
+
+            col.querySelector('.cat-stream-card').addEventListener('click', () => {
+                categoryModal.style.display = 'none';
+                searchInput.value = st.user_name;
+                updateDashboard(st.user_login);
+            });
+
+            categoryStreamersGrid.appendChild(col);
+        });
+    }
+
+    if (closeCategoryModalBtn) {
+        closeCategoryModalBtn.addEventListener('click', () => {
+            if (categoryModal) categoryModal.style.display = 'none';
+        });
     }
 
     // --- EVENT LISTENERS ---

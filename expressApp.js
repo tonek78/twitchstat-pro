@@ -177,48 +177,71 @@ function generateFallbackData(streamerName, errorReason = null) {
     };
 }
 
-// --- API Endpoint: Channel Search Autocomplete ---
+// --- API Endpoint: Channel & Category Search Autocomplete ---
 const router = express.Router();
 
 router.get('/search', async (req, res) => {
-    const query = req.query.q || '';
+    const query = (req.query.q || '').trim();
     if (!query || query.length < 2) {
-        return res.json({ channels: [] });
+        return res.json({ channels: [], categories: [] });
     }
 
-    const searchRes = await makeHelixCall('search/channels', {
-        query: query,
-        first: 6,
-        live_only: false
-    });
+    const [channelRes, categoryRes] = await Promise.all([
+        makeHelixCall('search/channels', { query: query, first: 5, live_only: false }),
+        makeHelixCall('search/categories', { query: query, first: 5 })
+    ]);
 
-    if (searchRes && searchRes.status === 200 && searchRes.data && searchRes.data.data) {
-        const channels = searchRes.data.data.map(ch => ({
+    let channels = [];
+    let categories = [];
+
+    if (channelRes && channelRes.status === 200 && channelRes.data && channelRes.data.data) {
+        channels = channelRes.data.data.map(ch => ({
             name: ch.display_name,
             login: ch.broadcaster_login,
             avatar: ch.thumbnail_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(ch.display_name)}&background=9146FF&color=fff&size=64`,
             is_live: ch.is_live,
             game: ch.game_name || ''
         }));
-        return res.json({ channels });
     }
 
-    const presets = [
-        { name: 'TheVR', login: 'thevr', is_live: true, game: 'Just Chatting' },
-        { name: 'Pierce', login: 'pierce', is_live: true, game: 'League of Legends' },
-        { name: 'xQc', login: 'xqc', is_live: true, game: 'Grand Theft Auto V' },
-        { name: 'shroud', login: 'shroud', is_live: false, game: 'VALORANT' },
-        { name: 'Papaplatte', login: 'papaplatte', is_live: true, game: 'Just Chatting' },
-        { name: 'ibai', login: 'ibai', is_live: false, game: 'Just Chatting' },
-        { name: 'pokimane', login: 'pokimane', is_live: false, game: 'Just Chatting' }
-    ];
+    if (categoryRes && categoryRes.status === 200 && categoryRes.data && categoryRes.data.data) {
+        categories = categoryRes.data.data.map(cat => ({
+            id: cat.id,
+            name: cat.name,
+            box_art: (cat.box_art_url || '').replace('{width}x{height}', '90x120')
+        }));
+    }
 
-    const filtered = presets.filter(p => p.name.toLowerCase().includes(query.toLowerCase()) || p.login.includes(query.toLowerCase())).map(p => ({
-        ...p,
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=9146FF&color=fff&size=64`
-    }));
+    // Fallbacks if API data is empty
+    if (channels.length === 0 && categories.length === 0) {
+        const presetChannels = [
+            { name: 'TheVR', login: 'thevr', is_live: true, game: 'Just Chatting' },
+            { name: 'Pierce', login: 'pierce', is_live: true, game: 'League of Legends' },
+            { name: 'xQc', login: 'xqc', is_live: true, game: 'Grand Theft Auto V' },
+            { name: 'shroud', login: 'shroud', is_live: false, game: 'VALORANT' },
+            { name: 'Papaplatte', login: 'papaplatte', is_live: true, game: 'Just Chatting' }
+        ];
 
-    return res.json({ channels: filtered });
+        const presetCategories = [
+            { id: '509658', name: 'Just Chatting', box_art: 'https://static-cdn.jtvnw.net/ttv-boxart/509658-90x120.jpg' },
+            { id: '32982', name: 'Grand Theft Auto V', box_art: 'https://static-cdn.jtvnw.net/ttv-boxart/32982-90x120.jpg' },
+            { id: '21779', name: 'League of Legends', box_art: 'https://static-cdn.jtvnw.net/ttv-boxart/21779-90x120.jpg' },
+            { id: '516575', name: 'VALORANT', box_art: 'https://static-cdn.jtvnw.net/ttv-boxart/516575-90x120.jpg' },
+            { id: '27471', name: 'Minecraft', box_art: 'https://static-cdn.jtvnw.net/ttv-boxart/27471-90x120.jpg' }
+        ];
+
+        channels = presetChannels
+            .filter(p => p.name.toLowerCase().includes(query.toLowerCase()) || p.login.includes(query.toLowerCase()))
+            .map(p => ({
+                ...p,
+                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=9146FF&color=fff&size=64`
+            }));
+
+        categories = presetCategories
+            .filter(c => c.name.toLowerCase().includes(query.toLowerCase()));
+    }
+
+    return res.json({ channels, categories });
 });
 
 // --- API Endpoint: Live Streamer Data ---
@@ -280,6 +303,75 @@ router.get('/streamer', async (req, res) => {
         language: channelInfo.broadcaster_language || 'hu',
         is_demo: false,
         auth_error: null
+    });
+});
+
+// --- API Endpoint: Category & Top Streams Data ---
+router.get('/category', async (req, res) => {
+    const categoryName = (req.query.q || req.query.name || 'Just Chatting').trim();
+    const categoryId = req.query.id || null;
+
+    console.log(`🔎 Kategória adatok lekérése: ${categoryName} (ID: ${categoryId})`);
+
+    let gameData = null;
+
+    if (categoryId) {
+        const gameRes = await makeHelixCall('games', { id: categoryId });
+        if (gameRes && gameRes.status === 200 && gameRes.data && gameRes.data.data && gameRes.data.data.length > 0) {
+            gameData = gameRes.data.data[0];
+        }
+    }
+
+    if (!gameData) {
+        const gameSearchRes = await makeHelixCall('games', { name: categoryName });
+        if (gameSearchRes && gameSearchRes.status === 200 && gameSearchRes.data && gameSearchRes.data.data && gameSearchRes.data.data.length > 0) {
+            gameData = gameSearchRes.data.data[0];
+        }
+    }
+
+    const targetGameId = gameData ? gameData.id : categoryId;
+    const targetGameName = gameData ? gameData.name : categoryName;
+    const boxArt = gameData ? gameData.box_art_url.replace('{width}x{height}', '180x240') : 'https://static-cdn.jtvnw.net/ttv-boxart/509658-180x240.jpg';
+
+    // Fetch top live streams for this game
+    let topStreams = [];
+    let totalViewers = 0;
+
+    if (targetGameId) {
+        const streamsRes = await makeHelixCall('streams', { game_id: targetGameId, first: 12 });
+        if (streamsRes && streamsRes.status === 200 && streamsRes.data && streamsRes.data.data) {
+            topStreams = streamsRes.data.data.map(st => ({
+                user_name: st.user_name,
+                user_login: st.user_login,
+                viewer_count: st.viewer_count,
+                title: st.title,
+                language: st.language,
+                thumbnail_url: (st.thumbnail_url || '').replace('{width}x{height}', '320x180'),
+                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(st.user_name)}&background=9146FF&color=fff&size=64`
+            }));
+            totalViewers = topStreams.reduce((acc, curr) => acc + curr.viewer_count, 0);
+        }
+    }
+
+    // Fallback demo data if Twitch API is offline or restricted
+    if (topStreams.length === 0) {
+        topStreams = [
+            { user_name: 'TheVR', user_login: 'thevr', viewer_count: 3145, title: 'Élő adás - ' + targetGameName, language: 'hu', thumbnail_url: 'https://picsum.photos/320/180?random=1', avatar: 'https://ui-avatars.com/api/?name=TheVR&background=9146FF&color=fff&size=64' },
+            { user_name: 'Papaplatte', user_login: 'papaplatte', viewer_count: 14200, title: 'Streaming ' + targetGameName, language: 'de', thumbnail_url: 'https://picsum.photos/320/180?random=2', avatar: 'https://ui-avatars.com/api/?name=Papaplatte&background=9146FF&color=fff&size=64' },
+            { user_name: 'Pierce', user_login: 'pierce', viewer_count: 1850, title: 'Élő adás!', language: 'hu', thumbnail_url: 'https://picsum.photos/320/180?random=3', avatar: 'https://ui-avatars.com/api/?name=Pierce&background=9146FF&color=fff&size=64' },
+            { user_name: 'xQc', user_login: 'xqc', viewer_count: 32400, title: 'BEST STREAM ' + targetGameName, language: 'en', thumbnail_url: 'https://picsum.photos/320/180?random=4', avatar: 'https://ui-avatars.com/api/?name=xQc&background=9146FF&color=fff&size=64' },
+            { user_name: 'shroud', user_login: 'shroud', viewer_count: 9800, title: 'RANKED SESSIONS', language: 'en', thumbnail_url: 'https://picsum.photos/320/180?random=5', avatar: 'https://ui-avatars.com/api/?name=shroud&background=9146FF&color=fff&size=64' }
+        ];
+        totalViewers = 61395;
+    }
+
+    return res.json({
+        id: targetGameId,
+        name: targetGameName,
+        box_art: boxArt,
+        total_viewers: totalViewers,
+        stream_count: topStreams.length,
+        streams: topStreams
     });
 });
 
