@@ -651,10 +651,7 @@ body {
 
 /* --- Dashboard Layout --- */
 .dashboard {
-    display: grid;
-    grid-template-columns: 360px 1fr;
-    gap: 2rem;
-    align-items: start;
+    margin: 0;
 }
 
 .sidebar-container {
@@ -993,9 +990,7 @@ body {
 }
 
 .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1.25rem;
+    margin: 0;
 }
 
 .kpi-card {
@@ -1003,6 +998,7 @@ body {
     align-items: center;
     gap: 1.25rem;
     padding: 1.4rem 1.25rem;
+    width: 100%;
 }
 
 .kpi-card:hover {
@@ -1071,9 +1067,7 @@ body {
 
 /* --- Charts Grid --- */
 .charts-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
+    margin: 0;
 }
 
 .wide-card {
