@@ -44,9 +44,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const streamTagsEl = document.getElementById('streamTags');
     const openEmbedBtn = document.getElementById('openEmbedBtn');
 
-    // Player Modal Elements
-    const playerModal = document.getElementById('playerModal');
-    const playerStreamerName = document.getElementById('playerStreamerName');
+    const iframeWrapper = document.getElementById('iframeWrapper');
+    const closePlayerBtn = document.getElementById('closePlayerBtn');
+
+    // Favorites Elements
+    const favoritesList = document.getElementById('favoritesList');
+
+    // Timeframe Elements
+    const tfButtons = document.querySelectorAll('.tf-btn');
+
+    // --- State Variables ---
+    let currentStreamerData = null;
+    let currentTimeframe = 30; // Default 30 days
+    let uptimeInterval = null;
+    let favorites = loadFavoritesFromStorage();
+
     // Language Switcher Element
     const langSelector = document.getElementById('langSelector');
     let currentLang = detectBrowserLanguage();
