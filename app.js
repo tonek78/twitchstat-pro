@@ -889,12 +889,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- EVENT LISTENERS ---
 
     // Search Action
-    function handleSearch() {
+    async function handleSearch() {
         const query = searchInput.value.trim();
-        if (query) {
-            hideSuggestions();
+        if (!query) return;
+
+        hideSuggestions();
+        clearSearchBtn.style.display = 'block';
+
+        try {
+            const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+            const data = await res.json();
+
+            const categories = data.categories || [];
+            const channels = data.channels || [];
+
+            const exactCat = categories.find(c => c.name.toLowerCase() === query.toLowerCase());
+            const exactChan = channels.find(c => c.name.toLowerCase() === query.toLowerCase() || c.login === query.toLowerCase());
+
+            if (exactCat && !exactChan) {
+                openCategoryModal(exactCat.id, exactCat.name);
+            } else if (categories.length > 0 && channels.length === 0) {
+                openCategoryModal(categories[0].id, categories[0].name);
+            } else {
+                updateDashboard(query);
+            }
+        } catch (e) {
             updateDashboard(query);
-            clearSearchBtn.style.display = 'block';
         }
     }
 
@@ -963,13 +983,21 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.focus();
     });
 
-    // Popular Chips Click
+    // Popular Chips Click (Streamer or Category)
     popularChips.forEach(chip => {
         chip.addEventListener('click', () => {
             const streamer = chip.getAttribute('data-streamer');
-            searchInput.value = streamer;
-            clearSearchBtn.style.display = 'block';
-            updateDashboard(streamer);
+            const category = chip.getAttribute('data-category');
+
+            if (category) {
+                searchInput.value = category;
+                clearSearchBtn.style.display = 'block';
+                openCategoryModal(null, category);
+            } else if (streamer) {
+                searchInput.value = streamer;
+                clearSearchBtn.style.display = 'block';
+                updateDashboard(streamer);
+            }
         });
     });
 
