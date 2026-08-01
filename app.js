@@ -47,20 +47,77 @@ document.addEventListener('DOMContentLoaded', () => {
     // Player Modal Elements
     const playerModal = document.getElementById('playerModal');
     const playerStreamerName = document.getElementById('playerStreamerName');
-    const iframeWrapper = document.getElementById('iframeWrapper');
-    const closePlayerBtn = document.getElementById('closePlayerBtn');
+    // Language Switcher Element
+    const langSelector = document.getElementById('langSelector');
+    let currentLang = detectBrowserLanguage();
 
-    // Favorites Elements
-    const favoritesList = document.getElementById('favoritesList');
+    // --- I18N LANGUAGE MANAGER ---
+    function detectBrowserLanguage() {
+        try {
+            const saved = localStorage.getItem('twitchstat_lang');
+            if (saved && typeof translations !== 'undefined' && translations[saved]) {
+                return saved;
+            }
+            const navLang = (navigator.language || (navigator.languages && navigator.languages[0]) || 'hu').toLowerCase();
+            if (navLang.startsWith('de')) return 'de';
+            if (navLang.startsWith('hu')) return 'hu';
+            return 'en';
+        } catch (e) {
+            return 'en';
+        }
+    }
 
-    // Timeframe Elements
-    const tfButtons = document.querySelectorAll('.tf-btn');
+    function getText(key, replacements = {}) {
+        if (typeof translations === 'undefined' || !translations[currentLang]) {
+            return key;
+        }
+        let txt = translations[currentLang][key] || (translations['en'] && translations['en'][key]) || key;
+        Object.keys(replacements).forEach(k => {
+            txt = txt.replace(`{${k}}`, replacements[k]);
+        });
+        return txt;
+    }
 
-    // --- State Variables ---
-    let currentStreamerData = null;
-    let currentTimeframe = 30; // Default 30 days
-    let uptimeInterval = null;
-    let favorites = loadFavoritesFromStorage();
+    function applyTranslations() {
+        if (typeof translations === 'undefined') return;
+
+        // Update all elements with data-i18n
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            const txt = getText(key);
+            if (txt) el.innerText = txt;
+        });
+
+        // Update placeholders
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            const txt = getText(key);
+            if (txt) el.placeholder = txt;
+        });
+
+        if (langSelector) langSelector.value = currentLang;
+
+        // Re-render charts if data exists
+        if (currentStreamerData) {
+            const baseViewers = currentStreamerData.is_live ? currentStreamerData.viewers : (currentStreamerData.followers > 0 ? Math.round(currentStreamerData.followers * 0.03) : 2500);
+            renderAllCharts(baseViewers, currentTimeframe);
+        }
+    }
+
+    function setLanguage(lang) {
+        if (typeof translations === 'undefined' || !translations[lang]) return;
+        currentLang = lang;
+        try {
+            localStorage.setItem('twitchstat_lang', lang);
+        } catch (e) {}
+        applyTranslations();
+    }
+
+    if (langSelector) {
+        langSelector.addEventListener('change', (e) => {
+            setLanguage(e.target.value);
+        });
+    }
 
     // Chart Instances
     let viewersChartInstance = null;
@@ -824,6 +881,7 @@ document.addEventListener('DOMContentLoaded', () => {
     closePlayerBtn.addEventListener('click', closeEmbedPlayer);
 
     // Initial Load Logic
+    applyTranslations();
     renderFavoritesUI();
 
     // Check URL Parameters for ?q=streamer
