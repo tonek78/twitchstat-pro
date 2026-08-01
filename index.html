@@ -6,15 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TwitchStats Pro - Streamer Analitika és Életút</title>
     <meta name="description" content="Professzionális Twitch streamer analitika, nézőszám statisztikák, élő adás adatok és feliratkozói elemzések valós időben.">
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
@@ -27,28 +30,28 @@
         <div class="orb orb-3"></div>
     </div>
 
-    <div class="app-container">
+    <div class="container-xl py-3 py-md-4">
         <!-- Main Header -->
-        <header class="main-header">
-            <div class="brand">
+        <header class="main-header d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mb-4">
+            <div class="brand d-flex align-items-center gap-2">
                 <div class="logo-icon">
                     <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
                         <path d="M11.571 4.714h1.715v5.143H11.57V4.714zm4.715 0H18v5.143h-1.714V4.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0H6zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714v9.429z"/>
                     </svg>
                 </div>
                 <div class="brand-text">
-                    <h1>Twitch<span class="highlight">Stats</span> <span class="badge-pro">PRO</span></h1>
+                    <h1 class="m-0 fs-3 fw-bold">Twitch<span class="highlight">Stats</span> <span class="badge-pro">PRO</span></h1>
                 </div>
             </div>
 
             <!-- Search Bar & Controls -->
-            <div class="search-section">
-                <div class="search-box">
+            <div class="search-section w-100 max-w-lg">
+                <div class="search-box position-relative">
                     <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
-                    <input type="text" id="streamerSearch" placeholder="Keress streamert (pl. TheVR, xQc, Pierce)..." autocomplete="off">
+                    <input type="text" id="streamerSearch" class="form-control" placeholder="Keress streamert (pl. TheVR, xQc)..." autocomplete="off">
                     <button id="clearSearchBtn" class="clear-btn" title="Keresés törlése" style="display: none;">
                         &times;
                     </button>
@@ -60,7 +63,7 @@
                 </div>
 
                 <!-- Popular Streamer Chips -->
-                <div class="popular-chips">
+                <div class="popular-chips d-flex align-items-center gap-2 mt-2 flex-wrap">
                     <span class="chips-label">Népszerű:</span>
                     <button class="chip-btn" data-streamer="TheVR">TheVR</button>
                     <button class="chip-btn" data-streamer="Pierce">Pierce</button>
@@ -72,25 +75,25 @@
         </header>
 
         <!-- Favorites Quick Access Bar -->
-        <section class="favorites-section" id="favoritesSection">
-            <div class="favorites-header">
+        <section class="favorites-section mb-4" id="favoritesSection">
+            <div class="d-flex align-items-center gap-2 mb-1 mb-md-0">
                 <span class="fav-icon">⭐</span>
-                <span class="fav-title">Kedvenc Streamerek:</span>
+                <span class="fav-title">Kedvencek:</span>
             </div>
-            <div class="favorites-list" id="favoritesList">
-                <span class="empty-fav-msg">Kattints a streamer profilján lévő csillagra a kedvencekhez adáshoz!</span>
+            <div class="favorites-list d-flex align-items-center gap-2 flex-nowrap overflow-x-auto" id="favoritesList">
+                <span class="empty-fav-msg text-muted small fs-7">Kattints a profil csillag gombjára a kedvencekhez adáshoz!</span>
             </div>
         </section>
 
         <!-- Embedded Live Player Container (Hidden by default) -->
-        <section class="player-modal" id="playerModal" style="display: none;">
+        <section class="player-modal mb-4" id="playerModal" style="display: none;">
             <div class="player-modal-content glass-panel">
-                <div class="player-modal-header">
-                    <div class="player-title">
+                <div class="player-modal-header d-flex justify-content-between align-items-center mb-3">
+                    <div class="player-title d-flex align-items-center gap-2">
                         <span class="live-pulse-dot"></span>
-                        <h3 id="playerStreamerName">Élő Adás</h3>
+                        <h3 id="playerStreamerName" class="fs-5 m-0">Élő Adás</h3>
                     </div>
-                    <button id="closePlayerBtn" class="close-player-btn">&times; Bezárás</button>
+                    <button id="closePlayerBtn" class="btn btn-sm btn-outline-light">&times; Bezárás</button>
                 </div>
                 <div class="iframe-responsive" id="iframeWrapper">
                     <!-- Dynamic Twitch Iframe will be injected here -->
@@ -99,27 +102,27 @@
         </section>
 
         <!-- Embed Code Generator Modal (Hidden by default) -->
-        <section class="player-modal" id="embedModal" style="display: none;">
+        <section class="player-modal mb-4" id="embedModal" style="display: none;">
             <div class="player-modal-content glass-panel">
-                <div class="player-modal-header">
-                    <div class="player-title">
+                <div class="player-modal-header d-flex justify-content-between align-items-center mb-3">
+                    <div class="player-title d-flex align-items-center gap-2">
                         <span class="chart-icon">⚡</span>
-                        <h3>Statisztika Widget Beágyazása Másik Oldalba</h3>
+                        <h3 class="fs-5 m-0">Statisztika Widget Beágyazása</h3>
                     </div>
-                    <button id="closeEmbedModalBtn" class="close-player-btn">&times; Bezárás</button>
+                    <button id="closeEmbedModalBtn" class="btn btn-sm btn-outline-light">&times; Bezárás</button>
                 </div>
                 <div class="embed-generator-body">
-                    <p class="embed-desc">Másold ki az alábbi <code>&lt;iframe&gt;</code> kódot, és illeszd be saját weboldaladba vagy blogodba a streamer élő adatsorának megjelenítéséhez!</p>
-                    
-                    <div class="code-copy-box">
-                        <textarea id="embedCodeText" readonly rows="3"></textarea>
-                        <button id="copyEmbedCodeBtn" class="btn-search">
+                    <p class="embed-desc">Másold ki az alábbi <code>&lt;iframe&gt;</code> kódot, és illeszd be saját weboldaladba!</p>
+
+                    <div class="code-copy-box d-flex flex-column gap-2">
+                        <textarea id="embedCodeText" class="form-control font-monospace" readonly rows="3"></textarea>
+                        <button id="copyEmbedCodeBtn" class="btn-search w-auto align-self-start">
                             <span>Kód Másolása</span>
                         </button>
                     </div>
 
-                    <div class="embed-preview-container">
-                        <span class="preview-label">Widget Előnézet:</span>
+                    <div class="embed-preview-container mt-3">
+                        <span class="preview-label d-block mb-2">Widget Előnézet:</span>
                         <div class="iframe-preview-wrapper" id="embedPreviewWrapper">
                             <!-- Dynamic iframe preview will be injected here -->
                         </div>
@@ -128,26 +131,26 @@
             </div>
         </section>
 
-        <!-- Dashboard Main Grid -->
-        <main class="dashboard">
+        <!-- Dashboard Main Grid (Bootstrap Responsive Row) -->
+        <main class="dashboard row g-4">
             <!-- Sidebar: Profile & Stream Details -->
-            <aside class="sidebar-container">
+            <aside class="col-12 col-lg-4 d-flex flex-column gap-3">
                 <!-- Profile Card -->
-                <section class="profile-card glass-panel" id="profileCard">
-                    <div class="profile-actions">
+                <section class="profile-card glass-panel text-center" id="profileCard">
+                    <div class="profile-actions position-absolute top-0 end-0 p-3 d-flex gap-2">
                         <button id="favToggleBtn" class="fav-btn" title="Hozzáadás a kedvencekhez">
-                            <svg class="star-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg class="star-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                             </svg>
                         </button>
-                        <button id="embedBtn" class="share-btn" title="Widget beágyazása másik oldalba">
-                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <button id="embedBtn" class="share-btn" title="Widget beágyazása">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="16 18 22 12 16 6"></polyline>
                                 <polyline points="8 6 2 12 8 18"></polyline>
                             </svg>
                         </button>
                         <button id="shareBtn" class="share-btn" title="Profil megosztása">
-                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="18" cy="5" r="3"></circle>
                                 <circle cx="6" cy="12" r="3"></circle>
                                 <circle cx="18" cy="19" r="3"></circle>
@@ -157,34 +160,32 @@
                         </button>
                     </div>
 
-                    <div class="profile-header">
-                        <div class="avatar-wrapper" id="avatarContainer">
+                    <div class="profile-header mt-2">
+                        <div class="avatar-wrapper mx-auto mb-3" id="avatarContainer">
                             <img id="streamerAvatar" src="https://ui-avatars.com/api/?name=TwitchStats&background=9146FF&color=fff&size=128" alt="Streamer Avatar">
                             <div class="status-ring" id="statusRing"></div>
                         </div>
                         <div class="profile-info">
-                            <h2 id="streamerName">Streamer Neve</h2>
-                            <p class="user-login" id="streamerLogin">@username</p>
+                            <h2 id="streamerName" class="fs-4 fw-bold mb-1">Streamer Neve</h2>
+                            <p class="user-login small mb-2" id="streamerLogin">@username</p>
                             <span class="status-badge offline" id="liveBadge">OFFLINE</span>
                         </div>
                     </div>
 
-                    <p class="bio-text" id="streamerBio">Keress rá egy streamerre a statisztikák és élő adás információk megtekintéséhez.</p>
+                    <p class="bio-text small my-3 text-muted" id="streamerBio">Keress rá egy streamerre a statisztikák megtekintéséhez.</p>
 
-                    <div class="meta-details">
-                        <div class="meta-item">
-                            <span class="meta-icon">📅</span>
-                            <span class="meta-label">Regisztráció:</span>
-                            <span class="meta-val" id="accountCreated">-</span>
+                    <div class="meta-details d-flex flex-column gap-2 py-3 border-top border-bottom">
+                        <div class="meta-item d-flex justify-content-between small">
+                            <span class="meta-label text-muted">📅 Regisztráció:</span>
+                            <span class="meta-val fw-semibold" id="accountCreated">-</span>
                         </div>
-                        <div class="meta-item">
-                            <span class="meta-icon">🌐</span>
-                            <span class="meta-label">Nyelv:</span>
-                            <span class="meta-val" id="streamerLang">Magyar</span>
+                        <div class="meta-item d-flex justify-content-between small">
+                            <span class="meta-label text-muted">🌐 Nyelv:</span>
+                            <span class="meta-val fw-semibold" id="streamerLang">Magyar</span>
                         </div>
                     </div>
 
-                    <div class="profile-links">
+                    <div class="profile-links mt-3">
                         <a id="twitchExternalLink" href="https://twitch.tv" target="_blank" rel="noopener noreferrer" class="btn-twitch">
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                                 <path d="M11.571 4.714h1.715v5.143H11.57V4.714zm4.715 0H18v5.143h-1.714V4.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0H6zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714v9.429z"/>
@@ -194,15 +195,15 @@
                     </div>
                 </section>
 
-                <!-- Live Stream Card (Dynamically updated) -->
+                <!-- Live Stream Card -->
                 <section class="stream-card glass-panel" id="streamInfoCard" style="display: none;">
-                    <div class="stream-card-header">
+                    <div class="stream-card-header d-flex justify-content-between align-items-center mb-2">
                         <span class="live-indicator"><span class="pulse-dot"></span> ÉLŐ ADÁS</span>
                         <div class="uptime-badge" id="uptimeBadge">00:00:00</div>
                     </div>
-                    
-                    <div class="stream-thumbnail">
-                        <img id="streamThumbnail" src="" alt="Stream Thumbnail">
+
+                    <div class="stream-thumbnail mb-2 position-relative rounded overflow-hidden">
+                        <img id="streamThumbnail" class="w-100" src="" alt="Stream Thumbnail">
                         <button id="openEmbedBtn" class="watch-embed-btn">
                             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                             <span>Lejátszás itt</span>
@@ -210,14 +211,14 @@
                     </div>
 
                     <div class="stream-details">
-                        <span class="game-category" id="gameName">Játék neve</span>
-                        <h3 class="stream-title" id="streamTitle">Stream Címe</h3>
-                        <div class="current-viewers">
+                        <span class="game-category small fw-bold text-cyan" id="gameName">Játék neve</span>
+                        <h3 class="stream-title fs-6 fw-bold my-1 text-truncate-2" id="streamTitle">Stream Címe</h3>
+                        <div class="current-viewers d-flex align-items-center gap-2 fw-bold fs-6 my-2 p-2 rounded bg-black-20">
                             <span class="viewers-icon">👥</span>
                             <span id="liveViewersCount" class="highlight-text">0</span>
-                            <span class="viewers-label">néző jelenleg</span>
+                            <span class="viewers-label small text-muted font-normal">néző jelenleg</span>
                         </div>
-                        <div class="tags-container" id="streamTags">
+                        <div class="tags-container d-flex flex-wrap gap-1" id="streamTags">
                             <!-- Tags injected here -->
                         </div>
                     </div>
@@ -225,104 +226,120 @@
             </aside>
 
             <!-- Main Content: KPI Metrics & Analytical Charts -->
-            <section class="content-container">
-                <!-- KPI Key Stat Cards Grid -->
-                <div class="kpi-grid">
-                    <div class="kpi-card glass-panel">
-                        <div class="kpi-icon icon-purple">💜</div>
-                        <div class="kpi-info">
-                            <span class="kpi-label">Követők</span>
-                            <h3 class="kpi-value" id="followersCount">0</h3>
-                            <span class="kpi-subtext" id="followersSubtext">Teljes követőtábor</span>
+            <section class="col-12 col-lg-8 d-flex flex-column gap-4">
+                <!-- KPI Key Stat Cards Grid (Bootstrap Row) -->
+                <div class="kpi-grid row g-3">
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="kpi-card glass-panel h-100 d-flex align-items-center gap-3">
+                            <div class="kpi-icon icon-purple">💜</div>
+                            <div class="kpi-info overflow-hidden">
+                                <span class="kpi-label">Követők</span>
+                                <h3 class="kpi-value fs-4 m-0" id="followersCount">0</h3>
+                                <span class="kpi-subtext small text-muted" id="followersSubtext">Követőtábor</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="kpi-card glass-panel">
-                        <div class="kpi-icon icon-cyan">👁️</div>
-                        <div class="kpi-info">
-                            <span class="kpi-label">Összes Megtekintés</span>
-                            <h3 class="kpi-value" id="totalViewsCount">0</h3>
-                            <span class="kpi-subtext">Csatorna nézettsége</span>
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="kpi-card glass-panel h-100 d-flex align-items-center gap-3">
+                            <div class="kpi-icon icon-cyan">👁️</div>
+                            <div class="kpi-info overflow-hidden">
+                                <span class="kpi-label">Megtekintés</span>
+                                <h3 class="kpi-value fs-4 m-0" id="totalViewsCount">0</h3>
+                                <span class="kpi-subtext small text-muted">Összes nézettség</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="kpi-card glass-panel">
-                        <div class="kpi-icon icon-pink">📈</div>
-                        <div class="kpi-info">
-                            <span class="kpi-label">Átlagos Nézőszám</span>
-                            <h3 class="kpi-value" id="avgViewersCount">0</h3>
-                            <span class="kpi-subtext">Utolsó 30 nap átlaga</span>
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="kpi-card glass-panel h-100 d-flex align-items-center gap-3">
+                            <div class="kpi-icon icon-pink">📈</div>
+                            <div class="kpi-info overflow-hidden">
+                                <span class="kpi-label">Átlag Néző</span>
+                                <h3 class="kpi-value fs-4 m-0" id="avgViewersCount">0</h3>
+                                <span class="kpi-subtext small text-muted">30 napos átlag</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="kpi-card glass-panel">
-                        <div class="kpi-icon icon-green">🔥</div>
-                        <div class="kpi-info">
-                            <span class="kpi-label">Csúcs Nézőszám</span>
-                            <h3 class="kpi-value" id="peakViewersCount">0</h3>
-                            <span class="kpi-subtext">Rekord egyidejű néző</span>
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="kpi-card glass-panel h-100 d-flex align-items-center gap-3">
+                            <div class="kpi-icon icon-green">🔥</div>
+                            <div class="kpi-info overflow-hidden">
+                                <span class="kpi-label">Csúcs Néző</span>
+                                <h3 class="kpi-value fs-4 m-0" id="peakViewersCount">0</h3>
+                                <span class="kpi-subtext small text-muted">Rekord egyidejű</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Charts Grid -->
-                <div class="charts-grid">
-                    <!-- Viewer History Line Chart (Wide Card) -->
-                    <div class="chart-card glass-panel wide-card">
-                        <div class="chart-header">
-                            <div class="chart-title">
-                                <span class="chart-icon">📈</span>
-                                <h3>Nézőszám Trendek</h3>
+                <!-- Charts Grid (Bootstrap Row) -->
+                <div class="charts-grid row g-3">
+                    <!-- Viewer History Line Chart (Full Width) -->
+                    <div class="col-12">
+                        <div class="chart-card glass-panel">
+                            <div class="chart-header d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                <div class="chart-title d-flex align-items-center gap-2">
+                                    <span class="chart-icon">📈</span>
+                                    <h3 class="fs-5 m-0">Nézőszám Trendek</h3>
+                                </div>
+                                <div class="timeframe-selector btn-group btn-group-sm">
+                                    <button class="tf-btn" data-days="7">7 Nap</button>
+                                    <button class="tf-btn active" data-days="30">30 Nap</button>
+                                    <button class="tf-btn" data-days="90">90 Nap</button>
+                                </div>
                             </div>
-                            <div class="timeframe-selector">
-                                <button class="tf-btn" data-days="7">7 Nap</button>
-                                <button class="tf-btn active" data-days="30">30 Nap</button>
-                                <button class="tf-btn" data-days="90">90 Nap</button>
+                            <div class="chart-container">
+                                <canvas id="viewersChart"></canvas>
                             </div>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="viewersChart"></canvas>
                         </div>
                     </div>
 
                     <!-- Subscribers Doughnut Chart -->
-                    <div class="chart-card glass-panel">
-                        <div class="chart-header">
-                            <div class="chart-title">
-                                <span class="chart-icon">⭐</span>
-                                <h3>Feliratkozók (Becsült Tier Eloszlás)</h3>
+                    <div class="col-12 col-md-6">
+                        <div class="chart-card glass-panel h-100">
+                            <div class="chart-header d-flex justify-content-between align-items-center mb-3">
+                                <div class="chart-title d-flex align-items-center gap-2">
+                                    <span class="chart-icon">⭐</span>
+                                    <h3 class="fs-6 m-0">Feliratkozók (Becsült)</h3>
+                                </div>
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle font-normal" style="font-size:0.68rem;" title="Twitch API adatvédelmi szabályzat miatt ez az adat becsült.">ℹ️ Becsült</span>
                             </div>
-                            <span class="chip-btn" style="font-size:0.7rem;" title="A Twitch API adatvédelmi szabályzata miatt a feliratkozói szám harmadik fél számára nem nyilvános, így ez az adat becsült.">ℹ️ Becsült adat</span>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="subsChart"></canvas>
+                            <div class="chart-container">
+                                <canvas id="subsChart"></canvas>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Geographic Bar Chart -->
-                    <div class="chart-card glass-panel">
-                        <div class="chart-header">
-                            <div class="chart-title">
-                                <span class="chart-icon">🌍</span>
-                                <h3>Nézők Becsült Földrajzi Eloszlása</h3>
+                    <div class="col-12 col-md-6">
+                        <div class="chart-card glass-panel h-100">
+                            <div class="chart-header d-flex justify-content-between align-items-center mb-3">
+                                <div class="chart-title d-flex align-items-center gap-2">
+                                    <span class="chart-icon">🌍</span>
+                                    <h3 class="fs-6 m-0">Nézői Földrajzi Becslés</h3>
+                                </div>
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle font-normal" style="font-size:0.68rem;" title="Twitch API nem adja ki a nézők privát földrajzi adatait.">ℹ️ Becsült</span>
                             </div>
-                            <span class="chip-btn" style="font-size:0.7rem;" title="A Twitch API nem adja ki a nézők privát IP / földrajzi elhelyezkedését harmadik fél számára.">ℹ️ Becsült adat</span>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="locationChart"></canvas>
+                            <div class="chart-container">
+                                <canvas id="locationChart"></canvas>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Peak Activity Heat Map / Hours Chart -->
-                    <div class="chart-card glass-panel wide-card">
-                        <div class="chart-header">
-                            <div class="chart-title">
-                                <span class="chart-icon">📊</span>
-                                <h3>Adásidők és Csúcsidőszakok (Aktivitás Óránként)</h3>
+                    <div class="col-12">
+                        <div class="chart-card glass-panel">
+                            <div class="chart-header d-flex justify-content-between align-items-center mb-3">
+                                <div class="chart-title d-flex align-items-center gap-2">
+                                    <span class="chart-icon">📊</span>
+                                    <h3 class="fs-5 m-0">Adásidők és Csúcsidőszakok (Óránként)</h3>
+                                </div>
                             </div>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="activityChart"></canvas>
+                            <div class="chart-container">
+                                <canvas id="activityChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -332,6 +349,9 @@
 
     <!-- Floating Toast Container -->
     <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Bootstrap 5.3 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Application Script -->
     <script src="app.js"></script>
