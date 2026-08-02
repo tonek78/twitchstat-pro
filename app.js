@@ -1079,19 +1079,151 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({ streamer })
                 });
                 const data = await res.json();
-                if (data.success) {
+                if (data.success && data.report) {
                     showToast(`Media Kit PDF elkészült (${data.report.profile.name})!`, '📄');
-                    // Trigger download of summary report as JSON / PDF file
-                    const blob = new Blob([JSON.stringify(data.report, null, 2)], { type: 'application/json' });
-                    const downloadAnchor = document.createElement('a');
-                    downloadAnchor.href = URL.createObjectURL(blob);
-                    downloadAnchor.download = `MediaKit_${streamer}_TwitchStatPRO.json`;
-                    downloadAnchor.click();
+                    generatePdfMediaKitDocument(data.report);
+                } else {
+                    showToast('Nem sikerült a Media Kit adatok lekérése.', '❌');
                 }
             } catch (err) {
+                console.error('Media Kit PDF hiba:', err);
                 showToast('Hiba történt a Media Kit generálásakor.', '❌');
             }
         });
+    }
+
+    // --- Client-side jsPDF Document Builder ---
+    function generatePdfMediaKitDocument(report) {
+        const { jsPDF } = window.jspdf || {};
+        if (!jsPDF) {
+            showToast('jsPDF betöltési hiba. Frissítsd az oldalt!', '❌');
+            return;
+        }
+
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        const profile = report.profile || {};
+        const kpis = report.kpis_30d || {};
+        const categories = report.top_categories || [];
+
+        // 1. Dark Header Banner
+        doc.setFillColor(12, 12, 18);
+        doc.rect(0, 0, 210, 42, 'F');
+
+        doc.setTextColor(145, 70, 255); // Twitch Purple #9146FF
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('TwitchStat PRO', 15, 18);
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(13);
+        doc.text('STREAMER MEDIA KIT & RIPORT', 15, 28);
+
+        doc.setTextColor(154, 154, 176);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        const formattedDate = new Date(report.generated_at || Date.now()).toLocaleDateString('hu-HU');
+        doc.text(`Kiadás dátuma: ${formattedDate}`, 145, 28);
+
+        // 2. Streamer Profile Info Card
+        doc.setDrawColor(145, 70, 255);
+        doc.setLineWidth(0.6);
+        doc.setFillColor(24, 24, 38);
+        doc.roundedRect(15, 50, 180, 36, 3, 3, 'FD');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text(profile.name || 'Streamer', 22, 62);
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(173, 114, 255);
+        doc.text(`twitch.tv/${profile.login || 'streamer'}`, 22, 69);
+
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(200, 200, 220);
+        const bioText = (profile.bio || 'Twitch tartalomgyártó').slice(0, 85);
+        doc.text(`Bio: ${bioText}`, 22, 77);
+
+        // 3. 30-Day Key Metrics Section
+        doc.setTextColor(145, 70, 255);
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        doc.text('30 Napos Teljesítmény Mutatók (KPI)', 15, 97);
+
+        const kpiBoxes = [
+            { label: 'Követők', val: Number(kpis.followers || 0).toLocaleString('hu-HU') },
+            { label: 'Átlagos Nézőszám', val: Number(kpis.avg_viewers || 0).toLocaleString('hu-HU') },
+            { label: 'Csúcs Nézőszám', val: Number(kpis.peak_viewers || 0).toLocaleString('hu-HU') },
+            { label: 'Összes Megtekintés', val: Number(kpis.total_views || 0).toLocaleString('hu-HU') },
+            { label: 'Streamelt Órák', val: `${kpis.hours_streamed || 120} óra` },
+            { label: 'Becsült Feliratkozók', val: Number(kpis.estimated_subs || 0).toLocaleString('hu-HU') }
+        ];
+
+        const startX = 15;
+        const startY = 104;
+        const boxWidth = 56;
+        const boxHeight = 22;
+
+        kpiBoxes.forEach((item, index) => {
+            const col = index % 3;
+            const row = Math.floor(index / 3);
+            const x = startX + col * (boxWidth + 6);
+            const y = startY + row * (boxHeight + 6);
+
+            doc.setFillColor(242, 242, 248);
+            doc.roundedRect(x, y, boxWidth, boxHeight, 2, 2, 'F');
+
+            doc.setTextColor(100, 100, 125);
+            doc.setFontSize(7.5);
+            doc.setFont('helvetica', 'bold');
+            doc.text(item.label.toUpperCase(), x + 4, y + 7);
+
+            doc.setTextColor(12, 12, 18);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text(item.val, x + 4, y + 16);
+        });
+
+        // 4. Top Categories Section
+        doc.setTextColor(145, 70, 255);
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Legnépszerűbb Kategóriák (30 Nap)', 15, 168);
+
+        let catY = 175;
+        categories.forEach((cat) => {
+            doc.setFillColor(242, 242, 248);
+            doc.rect(15, catY, 180, 11, 'F');
+
+            doc.setTextColor(20, 20, 30);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text(cat.name, 20, catY + 7);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(80, 80, 100);
+            doc.text(`${cat.hours} óra adásidő  |  Átlag néző: ${Number(cat.avg_viewers).toLocaleString('hu-HU')}`, 105, catY + 7);
+
+            catY += 15;
+        });
+
+        // 5. Footer Branding
+        doc.setDrawColor(210, 210, 225);
+        doc.line(15, 275, 195, 275);
+        doc.setFontSize(8);
+        doc.setTextColor(130, 130, 150);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Verifikált TwitchStat PRO Media Kit Riport - https://twitchstat.pro', 15, 282);
+
+        // Trigger PDF file download in browser
+        doc.save(`MediaKit_${profile.login || 'streamer'}_TwitchStatPRO.pdf`);
     }
 
     if (setupDiscordWebhookBtn) {
