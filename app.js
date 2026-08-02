@@ -1042,6 +1042,83 @@ document.addEventListener('DOMContentLoaded', () => {
 
     closePlayerBtn.addEventListener('click', closeEmbedPlayer);
 
+    // --- Streamer Tools & Integrations Click Handlers ---
+    const copyObsOverlayBtn = document.getElementById('copyObsOverlayBtn');
+    const previewObsOverlayBtn = document.getElementById('previewObsOverlayBtn');
+    const generateMediaKitBtn = document.getElementById('generateMediaKitBtn');
+    const setupDiscordWebhookBtn = document.getElementById('setupDiscordWebhookBtn');
+
+    if (copyObsOverlayBtn) {
+        copyObsOverlayBtn.addEventListener('click', () => {
+            const streamer = currentStreamerData ? currentStreamerData.login : 'thevr';
+            const overlayUrl = `${window.location.origin}/overlay/follower-counter.html?streamer=${encodeURIComponent(streamer)}&color=ffffff&accent=9146ff&bg=transparent&size=28`;
+
+            if (previewObsOverlayBtn) {
+                previewObsOverlayBtn.setAttribute('href', `/overlay/follower-counter.html?streamer=${encodeURIComponent(streamer)}`);
+            }
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(overlayUrl).then(() => {
+                    showToast(`OBS Overlay URL kimásolva (${streamer})!`, '📺');
+                });
+            } else {
+                showToast(`OBS URL: ${overlayUrl}`, '📺');
+            }
+        });
+    }
+
+    if (generateMediaKitBtn) {
+        generateMediaKitBtn.addEventListener('click', async () => {
+            const streamer = currentStreamerData ? currentStreamerData.login : 'thevr';
+            showToast('Media Kit PDF riport generálása folyamatban...', '⏳');
+
+            try {
+                const res = await fetch('/api/mediakit/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ streamer })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`Media Kit PDF elkészült (${data.report.profile.name})!`, '📄');
+                    // Trigger download of summary report as JSON / PDF file
+                    const blob = new Blob([JSON.stringify(data.report, null, 2)], { type: 'application/json' });
+                    const downloadAnchor = document.createElement('a');
+                    downloadAnchor.href = URL.createObjectURL(blob);
+                    downloadAnchor.download = `MediaKit_${streamer}_TwitchStatPRO.json`;
+                    downloadAnchor.click();
+                }
+            } catch (err) {
+                showToast('Hiba történt a Media Kit generálásakor.', '❌');
+            }
+        });
+    }
+
+    if (setupDiscordWebhookBtn) {
+        setupDiscordWebhookBtn.addEventListener('click', async () => {
+            const streamer = currentStreamerData ? currentStreamerData.name : 'TheVR';
+            const webhookUrl = prompt(`Adja meg a Discord csatornája Webhook URL-jét az élő adás értesítésekhez (${streamer}):`);
+            if (!webhookUrl || !webhookUrl.trim()) return;
+
+            showToast('Discord teszt értesítés küldése...', '⏳');
+            try {
+                const res = await fetch('/api/webhooks/discord/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ webhook_url: webhookUrl.trim(), streamer })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('✅ Teszt Discord értesítés sikeresen elküldve!', '🤖');
+                } else {
+                    showToast(`⚠️ ${data.error || 'Discord hiba.'}`, '❌');
+                }
+            } catch (err) {
+                showToast('Hálózati hiba a Discord webhook küldésekor.', '❌');
+            }
+        });
+    }
+
     // Initial Load Logic
     applyTranslations();
     renderFavoritesUI();

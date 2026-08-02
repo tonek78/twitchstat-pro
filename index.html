@@ -436,6 +436,74 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Streamer Tools & Integrations (OBS Overlay, Media Kit, Discord Webhooks) -->
+                    <div class="col-12">
+                        <div class="chart-card glass-panel border border-primary-subtle">
+                            <div class="chart-header d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                <div class="chart-title d-flex align-items-center gap-2">
+                                    <span class="chart-icon">🛠️</span>
+                                    <h3 class="fs-5 m-0">Streamer Eszközök & Integrációk</h3>
+                                </div>
+                                <span class="badge bg-primary text-white font-normal px-2 py-1">PRO ESZKÖZÖK</span>
+                            </div>
+
+                            <div class="row g-3">
+                                <!-- 1. OBS Overlay Generator Card -->
+                                <div class="col-12 col-md-4">
+                                    <div class="p-3 rounded bg-black-20 h-100 d-flex flex-column justify-content-between border border-secondary-subtle">
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2 mb-2">
+                                                <span class="fs-5">📺</span>
+                                                <h4 class="fs-6 fw-bold m-0">OBS / Streamlabs Overlay</h4>
+                                            </div>
+                                            <p class="small text-muted mb-3">Átlátszó hátterű élő követő- és nézőcsúcs widget beágyazása OBS-be.</p>
+                                        </div>
+                                        <div class="d-flex flex-column gap-2">
+                                            <button id="copyObsOverlayBtn" class="btn btn-sm btn-outline-primary text-light fw-semibold w-100">
+                                                📋 OBS Overlay URL Másolása
+                                            </button>
+                                            <a id="previewObsOverlayBtn" href="/overlay/follower-counter.html?streamer=thevr" target="_blank" class="btn btn-sm btn-link text-muted fs-7 text-center text-decoration-none">
+                                                🔍 Előnézet megnyitása
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 2. Media Kit Generator Card -->
+                                <div class="col-12 col-md-4">
+                                    <div class="p-3 rounded bg-black-20 h-100 d-flex flex-column justify-content-between border border-secondary-subtle">
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2 mb-2">
+                                                <span class="fs-5">📄</span>
+                                                <h4 class="fs-6 fw-bold m-0">Media Kit Riport (PDF)</h4>
+                                            </div>
+                                            <p class="small text-muted mb-3">Professzionális statisztikai PDF dokumentum generálása szponzoroknak.</p>
+                                        </div>
+                                        <button id="generateMediaKitBtn" class="btn btn-sm btn-outline-info text-light fw-semibold w-100">
+                                            📥 Media Kit PDF Letöltése
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 3. Discord Webhooks Card -->
+                                <div class="col-12 col-md-4">
+                                    <div class="p-3 rounded bg-black-20 h-100 d-flex flex-column justify-content-between border border-secondary-subtle">
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2 mb-2">
+                                                <span class="fs-5">🤖</span>
+                                                <h4 class="fs-6 fw-bold m-0">Discord Webhook Értesítés</h4>
+                                            </div>
+                                            <p class="small text-muted mb-3">Automatikus élő adás indítás és mérföldkő értesítések Discordra.</p>
+                                        </div>
+                                        <button id="setupDiscordWebhookBtn" class="btn btn-sm btn-outline-secondary text-light fw-semibold w-100">
+                                            🔔 Discord Webhook Tesztelése
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
