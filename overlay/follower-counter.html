@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TwitchStat PRO - OBS Follower Counter Overlay</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* Transparent Canvas for OBS / Streamlabs Browser Source */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            background: transparent !important;
+            overflow: hidden;
+            font-family: var(--widget-font, 'Outfit', sans-serif);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .widget-card {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 22px;
+            background: var(--widget-bg, rgba(12, 12, 18, 0.85));
+            border: 1px solid var(--widget-border, rgba(255, 255, 255, 0.12));
+            border-radius: 16px;
+            color: var(--widget-color, #f4f4f8);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: all 0.3s ease;
+        }
+
+        .widget-icon-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            background: rgba(145, 70, 255, 0.15);
+            border-radius: 12px;
+            color: var(--widget-accent, #9146ff);
+        }
+
+        .widget-icon-wrapper svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        .widget-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .widget-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 700;
+        }
+
+        .widget-value {
+            font-size: var(--widget-size, 28px);
+            font-weight: 800;
+            line-height: 1.1;
+            color: var(--widget-color, #ffffff);
+            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.25s ease;
+        }
+
+        /* Pulse animation when value changes */
+        .widget-value.bump {
+            transform: scale(1.2);
+            color: var(--widget-accent, #ad72ff);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="widget-card" id="widgetCard">
+        <div class="widget-icon-wrapper">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+        </div>
+        <div class="widget-content">
+            <span class="widget-label" id="widgetLabel">KÖVETŐK</span>
+            <span class="widget-value" id="widgetValue">--</span>
+        </div>
+    </div>
+
+<script>
+    // Read URL Parameters for dynamic styling & streamer token
+    const params = new URLSearchParams(window.location.search);
+    const root = document.documentElement;
+
+    const streamer = params.get('streamer') || params.get('channel') || 'thevr';
+    const type = params.get('type') || 'followers'; // 'followers' or 'peak'
+    const token = params.get('token') || '';
+
+    // Apply URL custom styling options
+    if (params.get('color')) root.style.setProperty('--widget-color', '#' + params.get('color').replace('#', ''));
+    if (params.get('accent')) root.style.setProperty('--widget-accent', '#' + params.get('accent').replace('#', ''));
+    if (params.get('size')) root.style.setProperty('--widget-size', params.get('size') + 'px');
+    if (params.get('bg') === 'transparent') {
+        root.style.setProperty('--widget-bg', 'transparent');
+        document.getElementById('widgetCard').style.border = 'none';
+        document.getElementById('widgetCard').style.boxShadow = 'none';
+    } else if (params.get('bg')) {
+        root.style.setProperty('--widget-bg', '#' + params.get('bg').replace('#', ''));
+    }
+
+    if (type === 'peak') {
+        document.getElementById('widgetLabel').textContent = 'NÉZŐCSÚCS';
+    }
+
+    const valueEl = document.getElementById('widgetValue');
+    let lastValue = null;
+
+    function animateBump(newValue) {
+        if (lastValue !== null && lastValue !== newValue) {
+            valueEl.classList.add('bump');
+            setTimeout(() => valueEl.classList.remove('bump'), 300);
+        }
+        lastValue = newValue;
+        valueEl.textContent = Number(newValue).toLocaleString('hu-HU');
+    }
+
+    async function fetchStats() {
+        try {
+            const apiUrl = `/api/overlays/live-stats/${encodeURIComponent(streamer)}${token ? '?token=' + token : ''}`;
+            const res = await fetch(apiUrl);
+            if (!res.ok) return;
+            const data = await res.json();
+            
+            const targetVal = type === 'peak' ? (data.peak_viewers || data.viewers || 0) : (data.followers || 0);
+            animateBump(targetVal);
+        } catch (err) {
+            console.error('Overlay fetch error:', err);
+        }
+    }
+
+    fetchStats();
+    setInterval(fetchStats, 5000);
+</script>
+
+</body>
+</html>

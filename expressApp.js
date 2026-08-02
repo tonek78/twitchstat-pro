@@ -388,6 +388,153 @@ router.get('/category', async (req, res) => {
     });
 });
 
+// --- In-Memory Store for Overlays & Webhooks (Database Abstraction) ---
+const overlayConfigs = new Map();
+const discordWebhooks = new Map();
+
+// --- 1. OBS / Streamlabs Overlay API Endpoints ---
+router.get('/overlays/live-stats/:streamer', async (req, res) => {
+    const streamerName = req.params.streamer;
+    console.log(`📡 OBS Overlay Live Stats hívás: ${streamerName}`);
+
+    // Retrieve live helix status or fallback
+    const userRes = await makeHelixCall('users', { login: streamerName.toLowerCase() });
+    let followers = 0;
+    let viewers = 0;
+    let isLive = false;
+
+    if (userRes && userRes.status === 200 && userRes.data && userRes.data.data && userRes.data.data.length > 0) {
+        const user = userRes.data.data[0];
+        const followRes = await makeHelixCall('channels/followers', { broadcaster_id: user.id });
+        if (followRes && followRes.status === 200 && followRes.data) {
+            followers = followRes.data.total || 0;
+        }
+
+        const streamRes = await makeHelixCall('streams', { user_id: user.id });
+        if (streamRes && streamRes.status === 200 && streamRes.data && streamRes.data.data && streamRes.data.data.length > 0) {
+            isLive = true;
+            viewers = streamRes.data.data[0].viewer_count || 0;
+        }
+    } else {
+        const fallback = generateFallbackData(streamerName);
+        followers = fallback.followers;
+        viewers = fallback.viewers;
+        isLive = fallback.is_live;
+    }
+
+    return res.json({
+        streamer: streamerName,
+        followers: followers,
+        viewers: viewers,
+        peak_viewers: isLive ? Math.round(viewers * 1.35) : Math.round(followers * 0.08),
+        is_live: isLive,
+        timestamp: new Date().toISOString()
+    });
+});
+
+router.post('/overlays/config', (req, res) => {
+    const { token, overlay_type, config } = req.body;
+    if (!token) return res.status(400).json({ error: 'Hiányzó token paraméter.' });
+    
+    overlayConfigs.set(token, {
+        overlay_type: overlay_type || 'follower_count',
+        config: config || {},
+        updated_at: new Date().toISOString()
+    });
+
+    return res.json({ success: true, message: 'Overlay konfiguráció sikeresen mentve!', token });
+});
+
+router.get('/overlays/config/:token', (req, res) => {
+    const token = req.params.token;
+    const configData = overlayConfigs.get(token);
+    if (!configData) {
+        return res.json({
+            overlay_type: 'follower_count',
+            config: { font_family: 'Outfit', text_color: '#ffffff', accent_color: '#9146ff' }
+        });
+    }
+    return res.json(configData);
+});
+
+// --- 2. Media Kit Generator API Endpoint ---
+router.post('/mediakit/generate', async (req, res) => {
+    const { streamer } = req.body;
+    if (!streamer) return res.status(400).json({ error: 'Streamer megadása kötelező.' });
+
+    const fallback = generateFallbackData(streamer);
+
+    const mediaKitReport = {
+        generated_at: new Date().toISOString(),
+        profile: {
+            name: fallback.name,
+            login: streamer.toLowerCase(),
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(fallback.name)}&background=9146FF&color=fff&size=200`,
+            created_at: fallback.created,
+            bio: fallback.bio
+        },
+        kpis_30d: {
+            followers: fallback.followers,
+            total_views: fallback.view_count,
+            avg_viewers: Math.round(fallback.followers * 0.045),
+            peak_viewers: Math.round(fallback.followers * 0.12),
+            hours_streamed: 148,
+            estimated_subs: Math.round(fallback.followers * 0.012)
+        },
+        top_categories: [
+            { name: 'Just Chatting', hours: 64, avg_viewers: Math.round(fallback.followers * 0.052) },
+            { name: fallback.game || 'Grand Theft Auto V', hours: 52, avg_viewers: Math.round(fallback.followers * 0.041) },
+            { name: 'VALORANT', hours: 32, avg_viewers: Math.round(fallback.followers * 0.038) }
+        ],
+        download_url: `/api/mediakit/download/${encodeURIComponent(streamer)}`
+    };
+
+    return res.json({ success: true, report: mediaKitReport });
+});
+
+// --- 3. Discord Webhook Test Alert Endpoint ---
+router.post('/webhooks/discord/test', async (req, res) => {
+    const { webhook_url, streamer, event_type } = req.body;
+    if (!webhook_url) return res.status(400).json({ error: 'Discord Webhook URL megadása kötelező.' });
+
+    const embed = {
+        title: `🔴 ${streamer || 'TheVR'} ÉLŐ ADÁSBAN VAN!`,
+        description: `**Kategória:** Just Chatting\n**Cím:** HAPPY HOUR #850 | Napi hírek és közösségi adás!`,
+        url: `https://twitch.tv/${streamer || 'thevr'}`,
+        color: 9520895, // Twitch Purple hex #9146FF
+        fields: [
+            { name: '👥 Átlagnézőszám', value: '4 820', inline: true },
+            { name: '❤️ Követők', value: '842 000', inline: true }
+        ],
+        footer: {
+            text: 'TwitchStat PRO Webhook Notification',
+            icon_url: 'https://twitchstat.pro/favicon.svg'
+        },
+        timestamp: new Date().toISOString()
+    };
+
+    try {
+        const discordRes = await fetch(webhook_url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: 'TwitchStat PRO Alert',
+                avatar_url: 'https://twitchstat.pro/favicon.svg',
+                embeds: [embed]
+            })
+        });
+
+        if (discordRes.ok || discordRes.status === 204) {
+            return res.json({ success: true, message: 'Discord teszt webhook sikeresen elküldve!' });
+        } else {
+            const errText = await discordRes.text();
+            return res.status(400).json({ error: `Discord Webhook Hiba (${discordRes.status}): ${errText}` });
+        }
+    } catch (err) {
+        return res.status(500).json({ error: `Hálózati hiba a Discord Webhook küldésekor: ${err.message}` });
+    }
+});
+
 // Mount router on /api and /.netlify/functions/api
 app.use('/api', router);
 app.use('/.netlify/functions/api', router);
