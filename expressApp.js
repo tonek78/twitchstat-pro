@@ -236,6 +236,23 @@ function generateFallbackData(streamerName, errorReason = null) {
     };
 }
 
+// --- Dynamic Presets Store (Streamers & Categories) for Admin CRUD ---
+const presetStreamersStore = [
+    { name: 'TheVR', login: 'thevr', is_live: true, game: 'Just Chatting' },
+    { name: 'Pierce', login: 'pierce', is_live: true, game: 'League of Legends' },
+    { name: 'xQc', login: 'xqc', is_live: true, game: 'Grand Theft Auto V' },
+    { name: 'shroud', login: 'shroud', is_live: false, game: 'VALORANT' },
+    { name: 'Papaplatte', login: 'papaplatte', is_live: true, game: 'Just Chatting' }
+];
+
+const presetCategoriesStore = [
+    { id: '509658', name: 'Just Chatting', box_art: 'https://static-cdn.jtvnw.net/ttv-boxart/509658-90x120.jpg' },
+    { id: '32982', name: 'Grand Theft Auto V', box_art: 'https://static-cdn.jtvnw.net/ttv-boxart/32982-90x120.jpg' },
+    { id: '21779', name: 'League of Legends', box_art: 'https://static-cdn.jtvnw.net/ttv-boxart/21779-90x120.jpg' },
+    { id: '516575', name: 'VALORANT', box_art: 'https://static-cdn.jtvnw.net/ttv-boxart/516575-90x120.jpg' },
+    { id: '27471', name: 'Minecraft', box_art: 'https://static-cdn.jtvnw.net/ttv-boxart/27471-90x120.jpg' }
+];
+
 // --- API Endpoint: Channel & Category Search Autocomplete ---
 const router = express.Router();
 
@@ -273,30 +290,14 @@ router.get('/search', async (req, res) => {
 
     // Fallbacks if API data is empty
     if (channels.length === 0 && categories.length === 0) {
-        const presetChannels = [
-            { name: 'TheVR', login: 'thevr', is_live: true, game: 'Just Chatting' },
-            { name: 'Pierce', login: 'pierce', is_live: true, game: 'League of Legends' },
-            { name: 'xQc', login: 'xqc', is_live: true, game: 'Grand Theft Auto V' },
-            { name: 'shroud', login: 'shroud', is_live: false, game: 'VALORANT' },
-            { name: 'Papaplatte', login: 'papaplatte', is_live: true, game: 'Just Chatting' }
-        ];
-
-        const presetCategories = [
-            { id: '509658', name: 'Just Chatting', box_art: 'https://static-cdn.jtvnw.net/ttv-boxart/509658-90x120.jpg' },
-            { id: '32982', name: 'Grand Theft Auto V', box_art: 'https://static-cdn.jtvnw.net/ttv-boxart/32982-90x120.jpg' },
-            { id: '21779', name: 'League of Legends', box_art: 'https://static-cdn.jtvnw.net/ttv-boxart/21779-90x120.jpg' },
-            { id: '516575', name: 'VALORANT', box_art: 'https://static-cdn.jtvnw.net/ttv-boxart/516575-90x120.jpg' },
-            { id: '27471', name: 'Minecraft', box_art: 'https://static-cdn.jtvnw.net/ttv-boxart/27471-90x120.jpg' }
-        ];
-
-        channels = presetChannels
+        channels = presetStreamersStore
             .filter(p => p.name.toLowerCase().includes(query.toLowerCase()) || p.login.includes(query.toLowerCase()))
             .map(p => ({
                 ...p,
                 avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=9146FF&color=fff&size=64`
             }));
 
-        categories = presetCategories
+        categories = presetCategoriesStore
             .filter(c => c.name.toLowerCase().includes(query.toLowerCase()));
     }
 
@@ -817,6 +818,102 @@ router.post('/admin/reports/resolve', (req, res) => {
         return res.json({ success: true, message: 'Report státusza sikeresen módosítva.', report: target });
     }
     return res.status(404).json({ error: 'Report nem található.' });
+// --- 6. Admin Presets CRUD Endpoints (Streamers & Categories) ---
+router.get('/admin/presets', (req, res) => {
+    const token = req.headers['x-admin-token'] || req.query.token;
+    if (token !== ADMIN_AUTH_TOKEN) {
+        return res.status(401).json({ error: 'Érvénytelen admin token.' });
+    }
+    return res.json({
+        success: true,
+        streamers: presetStreamersStore,
+        categories: presetCategoriesStore
+    });
+});
+
+router.post('/admin/presets/streamers', (req, res) => {
+    const token = req.headers['x-admin-token'] || req.query.token;
+    if (token !== ADMIN_AUTH_TOKEN) {
+        return res.status(401).json({ error: 'Érvénytelen admin token.' });
+    }
+    const { name, login, game, is_live } = req.body;
+    if (!name || !login) {
+        return res.status(400).json({ error: 'A streamer neve és login azonosítója kötelező.' });
+    }
+
+    const cleanLogin = login.toLowerCase().trim();
+    const existingIndex = presetStreamersStore.findIndex(s => s.login === cleanLogin);
+
+    const streamerData = {
+        name: name.trim(),
+        login: cleanLogin,
+        game: game ? game.trim() : 'Just Chatting',
+        is_live: is_live !== undefined ? Boolean(is_live) : true
+    };
+
+    if (existingIndex >= 0) {
+        presetStreamersStore[existingIndex] = streamerData;
+    } else {
+        presetStreamersStore.unshift(streamerData);
+    }
+
+    return res.json({ success: true, message: 'Streamer sikeresen mentve!', streamer: streamerData });
+});
+
+router.delete('/admin/presets/streamers/:login', (req, res) => {
+    const token = req.headers['x-admin-token'] || req.query.token;
+    if (token !== ADMIN_AUTH_TOKEN) {
+        return res.status(401).json({ error: 'Érvénytelen admin token.' });
+    }
+    const login = req.params.login.toLowerCase().trim();
+    const index = presetStreamersStore.findIndex(s => s.login === login);
+    if (index >= 0) {
+        presetStreamersStore.splice(index, 1);
+        return res.json({ success: true, message: `Streamer (${login}) törölve.` });
+    }
+    return res.status(404).json({ error: 'Streamer nem található.' });
+});
+
+router.post('/admin/presets/categories', (req, res) => {
+    const token = req.headers['x-admin-token'] || req.query.token;
+    if (token !== ADMIN_AUTH_TOKEN) {
+        return res.status(401).json({ error: 'Érvénytelen admin token.' });
+    }
+    const { id, name, box_art } = req.body;
+    if (!name) {
+        return res.status(400).json({ error: 'A kategória neve kötelező.' });
+    }
+
+    const catId = id ? id.toString().trim() : Date.now().toString().slice(-6);
+    const existingIndex = presetCategoriesStore.findIndex(c => c.id === catId);
+
+    const categoryData = {
+        id: catId,
+        name: name.trim(),
+        box_art: box_art ? box_art.trim() : 'https://static-cdn.jtvnw.net/ttv-boxart/509658-90x120.jpg'
+    };
+
+    if (existingIndex >= 0) {
+        presetCategoriesStore[existingIndex] = categoryData;
+    } else {
+        presetCategoriesStore.unshift(categoryData);
+    }
+
+    return res.json({ success: true, message: 'Kategória sikeresen mentve!', category: categoryData });
+});
+
+router.delete('/admin/presets/categories/:id', (req, res) => {
+    const token = req.headers['x-admin-token'] || req.query.token;
+    if (token !== ADMIN_AUTH_TOKEN) {
+        return res.status(401).json({ error: 'Érvénytelen admin token.' });
+    }
+    const id = req.params.id.toString().trim();
+    const index = presetCategoriesStore.findIndex(c => c.id === id);
+    if (index >= 0) {
+        presetCategoriesStore.splice(index, 1);
+        return res.json({ success: true, message: `Kategória (${id}) törölve.` });
+    }
+    return res.status(404).json({ error: 'Kategória nem található.' });
 });
 
 // Mount router on /api and /.netlify/functions/api

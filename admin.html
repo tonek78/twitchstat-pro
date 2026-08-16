@@ -205,7 +205,7 @@
             </div>
 
             <!-- Submitted User Reports Card -->
-            <div class="col-12">
+            <div class="col-12 mb-4">
                 <div class="chart-card glass-panel border border-warning-subtle">
                     <div class="chart-header d-flex justify-content-between align-items-center mb-3">
                         <div class="chart-title d-flex align-items-center gap-2">
@@ -237,7 +237,128 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Streamers CRUD Card -->
+            <div class="col-12 col-lg-6">
+                <div class="chart-card glass-panel border border-purple-subtle h-100">
+                    <div class="chart-header d-flex justify-content-between align-items-center mb-3">
+                        <div class="chart-title d-flex align-items-center gap-2">
+                            <span class="chart-icon">🎮</span>
+                            <h3 class="fs-5 m-0 text-purple">Ajánlott Streamerek Kezelése</h3>
+                        </div>
+                        <button onclick="openStreamerModal()" class="btn btn-sm btn-primary fw-bold font-monospace">
+                            ➕ Új Streamer
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover align-middle mb-0 small">
+                            <thead>
+                                <tr class="text-muted border-bottom border-secondary-subtle">
+                                    <th>Név / Login</th>
+                                    <th>Játék Kategória</th>
+                                    <th>Státusz</th>
+                                    <th class="text-end">Műveletek</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminStreamersTableBody">
+                                <tr><td colspan="4" class="text-center text-muted py-3">Betöltés...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories CRUD Card -->
+            <div class="col-12 col-lg-6">
+                <div class="chart-card glass-panel border border-cyan-subtle h-100">
+                    <div class="chart-header d-flex justify-content-between align-items-center mb-3">
+                        <div class="chart-title d-flex align-items-center gap-2">
+                            <span class="chart-icon">📚</span>
+                            <h3 class="fs-5 m-0 text-cyan">Népszerű Kategóriák Kezelése</h3>
+                        </div>
+                        <button onclick="openCategoryCrudModal()" class="btn btn-sm btn-info fw-bold font-monospace text-dark">
+                            ➕ Új Kategória
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover align-middle mb-0 small">
+                            <thead>
+                                <tr class="text-muted border-bottom border-secondary-subtle">
+                                    <th>Kép</th>
+                                    <th>ID / Név</th>
+                                    <th class="text-end">Műveletek</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminCategoriesTableBody">
+                                <tr><td colspan="3" class="text-center text-muted py-3">Betöltés...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </main>
+    </div>
+
+    <!-- Edit Streamer Modal -->
+    <div id="editStreamerModal" class="player-modal" style="display: none;">
+        <div class="player-modal-content glass-panel border border-primary-subtle p-4" style="max-width: 480px;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="fs-5 fw-bold m-0 text-light" id="streamerModalTitle">➕ Új Streamer Hozzáadása</h3>
+                <button onclick="closeStreamerModal()" class="btn-close btn-close-white"></button>
+            </div>
+            <form onsubmit="event.preventDefault(); saveStreamerPreset();">
+                <div class="mb-3 text-start">
+                    <label class="form-label small text-muted">Megjelenítendő Név *</label>
+                    <input type="text" id="crudStreamerName" class="form-control bg-dark text-light border-secondary" placeholder="Pl. TheVR" required>
+                </div>
+                <div class="mb-3 text-start">
+                    <label class="form-label small text-muted">Twitch Login Azonosító *</label>
+                    <input type="text" id="crudStreamerLogin" class="form-control bg-dark text-light border-secondary" placeholder="Pl. thevr" required>
+                </div>
+                <div class="mb-3 text-start">
+                    <label class="form-label small text-muted">Játék Kategória</label>
+                    <input type="text" id="crudStreamerGame" class="form-control bg-dark text-light border-secondary" placeholder="Pl. Just Chatting">
+                </div>
+                <div class="mb-3 text-start">
+                    <label class="form-label small text-muted">Élő Státusz</label>
+                    <select id="crudStreamerIsLive" class="form-select bg-dark text-light border-secondary">
+                        <option value="true">🔴 Élő Adásban</option>
+                        <option value="false">⚪ Off-line</option>
+                    </select>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <button type="button" onclick="closeStreamerModal()" class="btn btn-sm btn-outline-secondary">Mégse</button>
+                    <button type="submit" class="btn btn-sm btn-primary fw-bold">💾 Mentés</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Category Modal -->
+    <div id="editCategoryModal" class="player-modal" style="display: none;">
+        <div class="player-modal-content glass-panel border border-info-subtle p-4" style="max-width: 480px;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="fs-5 fw-bold m-0 text-light" id="categoryModalTitle">➕ Új Kategória Hozzáadása</h3>
+                <button onclick="closeCategoryCrudModal()" class="btn-close btn-close-white"></button>
+            </div>
+            <form onsubmit="event.preventDefault(); saveCategoryPreset();">
+                <input type="hidden" id="crudCategoryId">
+                <div class="mb-3 text-start">
+                    <label class="form-label small text-muted">Kategória Neve *</label>
+                    <input type="text" id="crudCategoryName" class="form-control bg-dark text-light border-secondary" placeholder="Pl. Just Chatting" required>
+                </div>
+                <div class="mb-3 text-start">
+                    <label class="form-label small text-muted">Borítókép URL (90x120)</label>
+                    <input type="url" id="crudCategoryBoxArt" class="form-control bg-dark text-light border-secondary" placeholder="https://static-cdn.jtvnw.net/...">
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <button type="button" onclick="closeCategoryCrudModal()" class="btn btn-sm btn-outline-secondary">Mégse</button>
+                    <button type="submit" class="btn btn-sm btn-info fw-bold text-dark">💾 Mentés</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
@@ -297,10 +418,12 @@
 
             fetchAdminStats();
             fetchAdminReports();
+            fetchAdminPresets();
             if (refreshInterval) clearInterval(refreshInterval);
             refreshInterval = setInterval(() => {
                 fetchAdminStats();
                 fetchAdminReports();
+                fetchAdminPresets();
             }, 10000);
         }
 
@@ -594,6 +717,199 @@
                 }
             } catch (err) {
                 console.error('Toggle Report Error:', err);
+            }
+        }
+
+        // --- Presets CRUD Functions (Streamers & Categories) ---
+        async function fetchAdminPresets() {
+            const token = getAdminToken();
+            if (!token) return;
+
+            try {
+                const res = await fetch('/api/admin/presets', {
+                    headers: { 'x-admin-token': token }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.success) {
+                    renderAdminPresets(data.streamers || [], data.categories || []);
+                }
+            } catch (err) {
+                console.error('Fetch Presets Error:', err);
+            }
+        }
+
+        function renderAdminPresets(streamers, categories) {
+            const streamersTbody = document.getElementById('adminStreamersTableBody');
+            const categoriesTbody = document.getElementById('adminCategoriesTableBody');
+
+            // Render Streamers Table
+            if (streamersTbody) {
+                if (streamers.length === 0) {
+                    streamersTbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Nincs beállított streamer.</td></tr>';
+                } else {
+                    streamersTbody.innerHTML = '';
+                    streamers.forEach(s => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>
+                                <span class="fw-bold text-light">${s.name}</span><br>
+                                <span class="font-monospace text-muted small">@${s.login}</span>
+                            </td>
+                            <td><span class="badge bg-dark border text-light-50">${s.game || 'Just Chatting'}</span></td>
+                            <td>${s.is_live ? '<span class="badge bg-danger">🔴 Élő</span>' : '<span class="badge bg-secondary">⚪ Off</span>'}</td>
+                            <td class="text-end">
+                                <button onclick="openStreamerModal('${s.name}', '${s.login}', '${s.game || ''}', ${s.is_live})" class="btn btn-sm btn-outline-info me-1">✏️ Edit</button>
+                                <button onclick="deleteStreamerPreset('${s.login}')" class="btn btn-sm btn-outline-danger">🗑️</button>
+                            </td>
+                        `;
+                        streamersTbody.appendChild(tr);
+                    });
+                }
+            }
+
+            // Render Categories Table
+            if (categoriesTbody) {
+                if (categories.length === 0) {
+                    categoriesTbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">Nincs beállított kategória.</td></tr>';
+                } else {
+                    categoriesTbody.innerHTML = '';
+                    categories.forEach(c => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td style="width: 48px;">
+                                <img src="${c.box_art}" width="36" height="48" class="rounded object-fit-cover border border-secondary" alt="${c.name}">
+                            </td>
+                            <td>
+                                <span class="fw-bold text-light">${c.name}</span><br>
+                                <span class="font-monospace text-muted small">ID: ${c.id}</span>
+                            </td>
+                            <td class="text-end">
+                                <button onclick="openCategoryCrudModal('${c.id}', '${c.name.replace(/'/g, "\\'")}', '${c.box_art}')" class="btn btn-sm btn-outline-info me-1">✏️ Edit</button>
+                                <button onclick="deleteCategoryPreset('${c.id}')" class="btn btn-sm btn-outline-danger">🗑️</button>
+                            </td>
+                        `;
+                        categoriesTbody.appendChild(tr);
+                    });
+                }
+            }
+        }
+
+        // Streamer Modal Handlers
+        function openStreamerModal(name = '', login = '', game = '', isLive = true) {
+            document.getElementById('streamerModalTitle').innerText = name ? '✏️ Streamer Szerkesztése' : '➕ Új Streamer Hozzáadása';
+            document.getElementById('crudStreamerName').value = name;
+            document.getElementById('crudStreamerLogin').value = login;
+            document.getElementById('crudStreamerGame').value = game;
+            document.getElementById('crudStreamerIsLive').value = isLive ? 'true' : 'false';
+            document.getElementById('editStreamerModal').style.display = 'flex';
+        }
+
+        function closeStreamerModal() {
+            document.getElementById('editStreamerModal').style.display = 'none';
+        }
+
+        async function saveStreamerPreset() {
+            const token = getAdminToken();
+            if (!token) return;
+
+            const name = document.getElementById('crudStreamerName').value;
+            const login = document.getElementById('crudStreamerLogin').value;
+            const game = document.getElementById('crudStreamerGame').value;
+            const is_live = document.getElementById('crudStreamerIsLive').value === 'true';
+
+            try {
+                const res = await fetch('/api/admin/presets/streamers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+                    body: JSON.stringify({ name, login, game, is_live })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    closeStreamerModal();
+                    fetchAdminPresets();
+                } else {
+                    alert(data.error || 'Hiba a streamer mentésekor.');
+                }
+            } catch (err) {
+                console.error('Save Streamer Error:', err);
+            }
+        }
+
+        async function deleteStreamerPreset(login) {
+            if (!confirm(`Biztosan törölni szeretnéd a(z) ${login} streamert az ajánlott listából?`)) return;
+            const token = getAdminToken();
+            if (!token) return;
+
+            try {
+                const res = await fetch(`/api/admin/presets/streamers/${encodeURIComponent(login)}`, {
+                    method: 'DELETE',
+                    headers: { 'x-admin-token': token }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    fetchAdminPresets();
+                }
+            } catch (err) {
+                console.error('Delete Streamer Error:', err);
+            }
+        }
+
+        // Category Modal Handlers
+        function openCategoryCrudModal(id = '', name = '', boxArt = '') {
+            document.getElementById('categoryModalTitle').innerText = name ? '✏️ Kategória Szerkesztése' : '➕ Új Kategória Hozzáadása';
+            document.getElementById('crudCategoryId').value = id;
+            document.getElementById('crudCategoryName').value = name;
+            document.getElementById('crudCategoryBoxArt').value = boxArt;
+            document.getElementById('editCategoryModal').style.display = 'flex';
+        }
+
+        function closeCategoryCrudModal() {
+            document.getElementById('editCategoryModal').style.display = 'none';
+        }
+
+        async function saveCategoryPreset() {
+            const token = getAdminToken();
+            if (!token) return;
+
+            const id = document.getElementById('crudCategoryId').value;
+            const name = document.getElementById('crudCategoryName').value;
+            const box_art = document.getElementById('crudCategoryBoxArt').value;
+
+            try {
+                const res = await fetch('/api/admin/presets/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+                    body: JSON.stringify({ id, name, box_art })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    closeCategoryCrudModal();
+                    fetchAdminPresets();
+                } else {
+                    alert(data.error || 'Hiba a kategória mentésekor.');
+                }
+            } catch (err) {
+                console.error('Save Category Error:', err);
+            }
+        }
+
+        async function deleteCategoryPreset(id) {
+            if (!confirm(`Biztosan törölni szeretnéd ezt a kategóriát (ID: ${id})?`)) return;
+            const token = getAdminToken();
+            if (!token) return;
+
+            try {
+                const res = await fetch(`/api/admin/presets/categories/${encodeURIComponent(id)}`, {
+                    method: 'DELETE',
+                    headers: { 'x-admin-token': token }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    fetchAdminPresets();
+                }
+            } catch (err) {
+                console.error('Delete Category Error:', err);
             }
         }
 
