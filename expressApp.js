@@ -41,7 +41,7 @@ app.use((req, res, next) => {
     try {
         analyticsStore.total_page_views++;
 
-        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+        const ip = req.headers['x-forwarded-for'] || (req.socket && req.socket.remoteAddress) || '127.0.0.1';
         analyticsStore.unique_visitors.add(ip);
         analyticsStore.active_sessions.set(ip, Date.now());
 
@@ -695,63 +695,68 @@ router.post('/admin/login', (req, res) => {
 });
 
 router.get('/admin/stats', (req, res) => {
-    const token = req.headers['x-admin-token'] || req.query.token;
-    if (token !== ADMIN_AUTH_TOKEN) {
-        return res.status(401).json({ error: 'Érvénytelen admin token. Bejelentkezés szükséges!' });
-    }
-
-    const now = Date.now();
-    let activeNow = 0;
-    analyticsStore.active_sessions.forEach((ts, ip) => {
-        if (now - ts < 300000) {
-            activeNow++;
+    try {
+        const token = req.headers['x-admin-token'] || req.query.token;
+        if (token !== ADMIN_AUTH_TOKEN) {
+            return res.status(401).json({ error: 'Érvénytelen admin token. Bejelentkezés szükséges!' });
         }
-    });
-    if (activeNow === 0) activeNow = Math.floor(Math.random() * 8) + 14;
 
-    const dailyTrends = [];
-    for (let i = 29; i >= 0; i--) {
-        const d = new Date(now - i * 86400000);
-        const dayLabel = d.toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' });
-        const baseViews = 380 + Math.floor(Math.sin(i / 3) * 140) + (i % 7 === 0 ? 280 : 0);
-        dailyTrends.push({ date: dayLabel, visitors: baseViews });
+        const now = Date.now();
+        let activeNow = 0;
+        analyticsStore.active_sessions.forEach((ts, ip) => {
+            if (now - ts < 300000) {
+                activeNow++;
+            }
+        });
+        if (activeNow === 0) activeNow = Math.floor(Math.random() * 8) + 14;
+
+        const dailyTrends = [];
+        for (let i = 29; i >= 0; i--) {
+            const d = new Date(now - i * 86400000);
+            const dayLabel = d.toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' });
+            const baseViews = 380 + Math.floor(Math.sin(i / 3) * 140) + (i % 7 === 0 ? 280 : 0);
+            dailyTrends.push({ date: dayLabel, visitors: baseViews });
+        }
+
+        const sortedStreamers = Object.entries(analyticsStore.top_streamer_searches)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 8)
+            .map(([name, count]) => ({ name, count }));
+
+        const countryNames = {
+            'HU': { name: 'Magyarország', flag: '🇭🇺' },
+            'GB': { name: 'Egyesült Királyság', flag: '🇬🇧' },
+            'DE': { name: 'Németország', flag: '🇩🇪' },
+            'US': { name: 'Amerikai Egyesült Államok', flag: '🇺🇸' },
+            'RO': { name: 'Románia', flag: '🇷🇴' },
+            'SK': { name: 'Szlovákia', flag: '🇸🇰' },
+            'AT': { name: 'Ausztria', flag: '🇦🇹' },
+            'OTHER': { name: 'Egyéb országok', flag: '🌐' }
+        };
+
+        const countriesFormatted = Object.entries(analyticsStore.country_counts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([code, count]) => ({
+                code,
+                name: (countryNames[code] ? countryNames[code].name : code),
+                flag: (countryNames[code] ? countryNames[code].flag : '🌐'),
+                count
+            }));
+
+        return res.json({
+            total_page_views: analyticsStore.total_page_views,
+            unique_visitors: Math.max(analyticsStore.unique_visitors.size, 8420),
+            active_now: activeNow,
+            top_country: countriesFormatted[0] || { code: 'HU', name: 'Magyarország', flag: '🇭🇺', count: 10450 },
+            countries: countriesFormatted,
+            top_streamers: sortedStreamers,
+            devices: analyticsStore.device_counts,
+            daily_trends: dailyTrends
+        });
+    } catch (err) {
+        console.error('Hiba az /admin/stats lekérésben:', err);
+        return res.status(500).json({ error: `Szerver hiba: ${err.message}` });
     }
-
-    const sortedStreamers = Object.entries(analyticsStore.top_streamer_searches)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 8)
-        .map(([name, count]) => ({ name, count }));
-
-    const countryNames = {
-        'HU': { name: 'Magyarország', flag: '🇭🇺' },
-        'GB': { name: 'Egyesült Királyság', flag: '🇬🇧' },
-        'DE': { name: 'Németország', flag: '🇩🇪' },
-        'US': { name: 'Amerikai Egyesült Államok', flag: '🇺🇸' },
-        'RO': { name: 'Románia', flag: '🇷🇴' },
-        'SK': { name: 'Szlovákia', flag: '🇸🇰' },
-        'AT': { name: 'Ausztria', flag: '🇦🇹' },
-        'OTHER': { name: 'Egyéb országok', flag: '🌐' }
-    };
-
-    const countriesFormatted = Object.entries(analyticsStore.country_counts)
-        .sort((a, b) => b[1] - a[1])
-        .map(([code, count]) => ({
-            code,
-            name: (countryNames[code] ? countryNames[code].name : code),
-            flag: (countryNames[code] ? countryNames[code].flag : '🌐'),
-            count
-        }));
-
-    return res.json({
-        total_page_views: analyticsStore.total_page_views,
-        unique_visitors: Math.max(analyticsStore.unique_visitors.size, 8420),
-        active_now: activeNow,
-        top_country: countriesFormatted[0] || { code: 'HU', name: 'Magyarország', flag: '🇭🇺', count: 10450 },
-        countries: countriesFormatted,
-        top_streamers: sortedStreamers,
-        devices: analyticsStore.device_counts,
-        daily_trends: dailyTrends
-    });
 });
 
 // --- 5. User Issue & Bug Report System ---
@@ -799,36 +804,50 @@ router.post('/report', (req, res) => {
 });
 
 router.get('/admin/reports', (req, res) => {
-    const token = req.headers['x-admin-token'] || req.query.token;
-    if (token !== ADMIN_AUTH_TOKEN) {
-        return res.status(401).json({ error: 'Érvénytelen admin token.' });
+    try {
+        const token = req.headers['x-admin-token'] || req.query.token;
+        if (token !== ADMIN_AUTH_TOKEN) {
+            return res.status(401).json({ error: 'Érvénytelen admin token.' });
+        }
+        return res.json({ success: true, reports: reportsStore });
+    } catch (err) {
+        return res.status(500).json({ error: `Szerver hiba: ${err.message}` });
     }
-    return res.json({ success: true, reports: reportsStore });
 });
 
 router.post('/admin/reports/resolve', (req, res) => {
-    const token = req.headers['x-admin-token'] || req.query.token;
-    if (token !== ADMIN_AUTH_TOKEN) {
-        return res.status(401).json({ error: 'Érvénytelen admin token.' });
+    try {
+        const token = req.headers['x-admin-token'] || req.query.token;
+        if (token !== ADMIN_AUTH_TOKEN) {
+            return res.status(401).json({ error: 'Érvénytelen admin token.' });
+        }
+        const { report_id } = req.body;
+        const target = reportsStore.find(r => r.id === report_id);
+        if (target) {
+            target.status = target.status === 'Lezárt' ? 'Nyitott' : 'Lezárt';
+            return res.json({ success: true, message: 'Report státusza sikeresen módosítva.', report: target });
+        }
+        return res.status(404).json({ error: 'Report nem található.' });
+    } catch (err) {
+        return res.status(500).json({ error: `Szerver hiba: ${err.message}` });
     }
-    const { report_id } = req.body;
-    const target = reportsStore.find(r => r.id === report_id);
-    if (target) {
-        target.status = target.status === 'Lezárt' ? 'Nyitott' : 'Lezárt';
-        return res.json({ success: true, message: 'Report státusza sikeresen módosítva.', report: target });
-    }
-    return res.status(404).json({ error: 'Report nem található.' });
+});
+
 // --- 6. Admin Presets CRUD Endpoints (Streamers & Categories) ---
 router.get('/admin/presets', (req, res) => {
-    const token = req.headers['x-admin-token'] || req.query.token;
-    if (token !== ADMIN_AUTH_TOKEN) {
-        return res.status(401).json({ error: 'Érvénytelen admin token.' });
+    try {
+        const token = req.headers['x-admin-token'] || req.query.token;
+        if (token !== ADMIN_AUTH_TOKEN) {
+            return res.status(401).json({ error: 'Érvénytelen admin token.' });
+        }
+        return res.json({
+            success: true,
+            streamers: presetStreamersStore,
+            categories: presetCategoriesStore
+        });
+    } catch (err) {
+        return res.status(500).json({ error: `Szerver hiba: ${err.message}` });
     }
-    return res.json({
-        success: true,
-        streamers: presetStreamersStore,
-        categories: presetCategoriesStore
-    });
 });
 
 router.post('/admin/presets/streamers', (req, res) => {
