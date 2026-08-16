@@ -1279,6 +1279,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 confirmBtn.removeEventListener('click', onConfirm);
                 cancelBtn.removeEventListener('click', onCancel);
                 closeBtn.removeEventListener('click', onCancel);
+                modal.removeEventListener('click', onBackdropClick);
             };
 
             const onConfirm = () => {
@@ -1292,9 +1293,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 resolve(null);
             };
 
+            const onBackdropClick = (e) => {
+                if (e.target === modal) {
+                    onCancel();
+                }
+            };
+
             confirmBtn.addEventListener('click', onConfirm);
             cancelBtn.addEventListener('click', onCancel);
             closeBtn.addEventListener('click', onCancel);
+            modal.addEventListener('click', onBackdropClick);
 
             if (inputEl) {
                 inputEl.onkeydown = (e) => {
