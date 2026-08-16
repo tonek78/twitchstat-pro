@@ -1277,7 +1277,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             modal.style.display = 'block';
-            setTimeout(() => { if (inputEl) inputEl.focus(); }, 100);
+            setTimeout(() => {
+                if (inputEl) {
+                    inputEl.focus();
+                    inputEl.select();
+                }
+            }, 100);
 
             const cleanup = () => {
                 modal.style.display = 'none';
@@ -1360,15 +1365,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentFollowers = currentStreamerData ? currentStreamerData.followers : 842000;
             const defaultGoal = currentFollowers > 500000 ? 1000000 : (currentFollowers > 100000 ? 500000 : 100000);
 
+            // Step 1: Ask for target goal number
             const inputGoal = await showCustomPromptModal({
-                title: 'OBS Goal Bar Követő Cél',
+                title: '1. OBS Goal Bar Cél Megadása',
                 icon: '🎯',
                 desc: `Add meg a kitűzött követő célt a(z) ${streamer} csatornához:`,
                 defaultValue: defaultGoal.toString(),
                 placeholder: 'Pl. 1000000'
             });
 
-            if (!inputGoal) return;
+            if (inputGoal === null) return;
 
             const targetVal = parseInt(inputGoal.replace(/\s/g, ''), 10) || defaultGoal;
             const goalUrl = `${window.location.origin}/overlay/goal-bar.html?streamer=${encodeURIComponent(streamer)}&target=${targetVal}&title=Követő+Cél&color=ffffff&accent=00ff88`;
@@ -1378,12 +1384,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (navigator.clipboard) {
-                navigator.clipboard.writeText(goalUrl).then(() => {
-                    showToast(`OBS Goal Bar URL kimásolva (${targetVal.toLocaleString('hu-HU')} cél)!`, '🎯');
-                });
-            } else {
-                showToast(`Goal Bar URL: ${goalUrl}`, '🎯');
+                try { await navigator.clipboard.writeText(goalUrl); } catch (e) {}
             }
+
+            // Step 2: Show the generated URL in modal so the user gets the URL!
+            await showCustomPromptModal({
+                title: '2. Generált OBS Goal Bar URL',
+                icon: '📋',
+                desc: `Az OBS Goal Bar Browser Source URL elkészült (${targetVal.toLocaleString('hu-HU')} cél). Kimásolva a vágólapra:`,
+                defaultValue: goalUrl,
+                placeholder: 'https://...'
+            });
+
+            showToast(`OBS Goal Bar URL kimásolva (${targetVal.toLocaleString('hu-HU')} cél)!`, '🎯');
         });
     }
 
