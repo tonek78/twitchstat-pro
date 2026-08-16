@@ -1476,13 +1476,76 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Initial Load Logic
-    applyTranslations();
-    renderFavoritesUI();
+    // --- 6. User Report Modal Handler ---
+    const openReportModalFooterBtn = document.getElementById('openReportModalFooterBtn');
+    const reportIssueModal = document.getElementById('reportIssueModal');
+    const closeReportModalBtn = document.getElementById('closeReportModalBtn');
+    const cancelReportModalBtn = document.getElementById('cancelReportModalBtn');
+    const reportIssueForm = document.getElementById('reportIssueForm');
 
-    // Check URL Parameters for ?q=streamer
+    function openReportModal() {
+        if (reportIssueModal) {
+            const reportStreamerInput = document.getElementById('reportStreamerInput');
+            if (reportStreamerInput && currentStreamerData) {
+                reportStreamerInput.value = currentStreamerData.name || '';
+            }
+            reportIssueModal.style.display = 'block';
+        }
+    }
+
+    function closeReportModal() {
+        if (reportIssueModal) {
+            reportIssueModal.style.display = 'none';
+        }
+    }
+
+    if (openReportModalFooterBtn) openReportModalFooterBtn.addEventListener('click', openReportModal);
+    if (closeReportModalBtn) closeReportModalBtn.addEventListener('click', closeReportModal);
+    if (cancelReportModalBtn) cancelReportModalBtn.addEventListener('click', closeReportModal);
+
+    if (reportIssueModal) {
+        reportIssueModal.addEventListener('click', (e) => {
+            if (e.target === reportIssueModal) closeReportModal();
+        });
+    }
+
+    window.submitUserReport = async function() {
+        const type = document.getElementById('reportTypeSelect').value;
+        const streamer = document.getElementById('reportStreamerInput').value;
+        const description = document.getElementById('reportDescInput').value;
+        const email = document.getElementById('reportEmailInput').value;
+
+        if (!description || !description.trim()) return;
+
+        showToast('Hibajelentés küldése folyamatban...', '⏳');
+
+        try {
+            const res = await fetch('/api/report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type, streamer, description, email })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                showToast('✅ Hibajelentését rögzítettük! Köszönjük a segítséget.', '🚩');
+                closeReportModal();
+                if (reportIssueForm) reportIssueForm.reset();
+            } else {
+                showToast(`⚠️ ${data.error || 'Hiba történt a küldéskor.'}`, '❌');
+            }
+        } catch (err) {
+            showToast('Hálózati hiba a hibajelentés küldésekor.', '❌');
+        }
+    };
+
+    // Check URL Parameters for ?q=streamer or ?openReport=1
     const urlParams = new URLSearchParams(window.location.search);
     const initialQuery = urlParams.get('q');
+
+    if (urlParams.get('openReport') === '1') {
+        openReportModal();
+    }
 
     if (initialQuery) {
         searchInput.value = initialQuery;

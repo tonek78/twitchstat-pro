@@ -753,6 +753,72 @@ router.get('/admin/stats', (req, res) => {
     });
 });
 
+// --- 5. User Issue & Bug Report System ---
+const reportsStore = [
+    {
+        id: 'rep-101',
+        type: '🐛 Hiba',
+        streamer: 'TheVR',
+        description: 'A követők száma nem frissül azonnal az OBS overlay-ben.',
+        email: 'teszt@twitchstat.pro',
+        date: new Date(Date.now() - 3600000 * 4).toISOString(),
+        status: 'Nyitott'
+    },
+    {
+        id: 'rep-102',
+        type: '💡 Fejlesztési ötlet',
+        streamer: 'Pierce',
+        description: 'Jó lenne egy külön Sub Count cél sáv is a Goal Bar modulban.',
+        email: 'pierce_fan@gmail.com',
+        date: new Date(Date.now() - 3600000 * 18).toISOString(),
+        status: 'Lezárt'
+    }
+];
+
+router.post('/report', (req, res) => {
+    const { type, streamer, description, email } = req.body;
+    if (!description || !description.trim()) {
+        return res.status(400).json({ error: 'A hiba leírásának megadása kötelező.' });
+    }
+
+    const newReport = {
+        id: `rep-${Date.now().toString().slice(-4)}`,
+        type: type || '🐛 Hiba',
+        streamer: streamer ? streamer.trim() : 'Főoldal',
+        description: description.trim(),
+        email: email ? email.trim() : 'Nincs megadva',
+        date: new Date().toISOString(),
+        status: 'Nyitott'
+    };
+
+    reportsStore.unshift(newReport);
+    console.log(`🚩 Új hibajelentés érkezett: ${newReport.type} - ${newReport.streamer}`);
+
+    return res.json({ success: true, message: 'Hibajelentését sikeresen rögzítettük! Köszönjük a visszajelzést.', report: newReport });
+});
+
+router.get('/admin/reports', (req, res) => {
+    const token = req.headers['x-admin-token'] || req.query.token;
+    if (token !== ADMIN_AUTH_TOKEN) {
+        return res.status(401).json({ error: 'Érvénytelen admin token.' });
+    }
+    return res.json({ success: true, reports: reportsStore });
+});
+
+router.post('/admin/reports/resolve', (req, res) => {
+    const token = req.headers['x-admin-token'] || req.query.token;
+    if (token !== ADMIN_AUTH_TOKEN) {
+        return res.status(401).json({ error: 'Érvénytelen admin token.' });
+    }
+    const { report_id } = req.body;
+    const target = reportsStore.find(r => r.id === report_id);
+    if (target) {
+        target.status = target.status === 'Lezárt' ? 'Nyitott' : 'Lezárt';
+        return res.json({ success: true, message: 'Report státusza sikeresen módosítva.', report: target });
+    }
+    return res.status(404).json({ error: 'Report nem található.' });
+});
+
 // Mount router on /api and /.netlify/functions/api
 app.use('/api', router);
 app.use('/.netlify/functions/api', router);

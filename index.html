@@ -604,6 +604,62 @@
                 </div>
             </section>
         </main>
+
+        <!-- Footer -->
+        <footer class="footer text-center text-muted small py-4 my-4 border-top border-secondary-subtle">
+            <div class="d-flex justify-content-center align-items-center gap-3 mb-2 flex-wrap">
+                <a href="/" class="text-light fw-semibold text-decoration-none">🏠 Főoldal</a> |
+                <a href="/aszf.html" class="text-light fw-semibold text-decoration-none">📜 ÁSZF (Szerződési Feltételek)</a> |
+                <button id="openReportModalFooterBtn" class="btn btn-link p-0 text-warning text-decoration-none fw-semibold">🚩 Hiba / Visszajelzés Jelentése</button>
+            </div>
+            <span>© 2026 TwitchStat PRO - Minden jog fenntartva. Független Twitch elemző platform.</span>
+        </footer>
+    </div>
+
+    <!-- Report Issue / Feedback Modal -->
+    <div id="reportIssueModal" class="player-modal" style="display: none;">
+        <div class="player-modal-content glass-panel border border-warning-subtle p-4" style="max-width: 500px;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fs-4">🚩</span>
+                    <h3 class="fs-5 fw-bold m-0 text-light">Hiba vagy Visszajelzés Jelentése</h3>
+                </div>
+                <button id="closeReportModalBtn" class="btn-close btn-close-white" aria-label="Bezárás"></button>
+            </div>
+            <p class="small text-muted mb-3">Tapasztaltál valamilyen hibát vagy van egy jó fejlesztési ötleted? Írd meg nekünk!</p>
+
+            <form id="reportIssueForm" onsubmit="event.preventDefault(); submitUserReport();">
+                <div class="mb-3 text-start">
+                    <label class="form-label small text-muted">Visszajelzés Típusa</label>
+                    <select id="reportTypeSelect" class="form-select bg-dark text-light border-secondary">
+                        <option value="🐛 Hiba">🐛 Weboldal Hiba / Bug</option>
+                        <option value="💡 Fejlesztési ötlet">💡 Fejlesztési Ötlet / Funkció kérés</option>
+                        <option value="⚠️ Helytelen adat">⚠️ Helytelen Streamer Adatok</option>
+                        <option value="❓ Egyéb">❓ Egyéb Észrevétel</option>
+                    </select>
+                </div>
+
+                <div class="mb-3 text-start">
+                    <label class="form-label small text-muted">Érintett Streamer / Útvonal (Opcionális)</label>
+                    <input type="text" id="reportStreamerInput" class="form-control bg-dark text-light border-secondary" placeholder="Pl. TheVR vagy /overlay/goal-bar.html">
+                </div>
+
+                <div class="mb-3 text-start">
+                    <label class="form-label small text-muted">Részletes Leírás *</label>
+                    <textarea id="reportDescInput" class="form-control bg-dark text-light border-secondary" rows="4" placeholder="Kérjük írd le részletesen, mi történt..." required></textarea>
+                </div>
+
+                <div class="mb-3 text-start">
+                    <label class="form-label small text-muted">Elérhetőséged / Email (Opcionális)</label>
+                    <input type="email" id="reportEmailInput" class="form-control bg-dark text-light border-secondary" placeholder="Valaszhoz: nev@email.hu">
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <button type="button" id="cancelReportModalBtn" class="btn btn-sm btn-outline-secondary">Mégse</button>
+                    <button type="submit" id="submitReportBtn" class="btn btn-sm btn-warning fw-bold text-dark">🚩 Küldés</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Floating Toast Container -->
@@ -614,10 +670,6 @@
 
     <!-- Translations & App Scripts -->
     <script src="translations.js?v=1.1.0"></script>
-    <script src="app.js?v=1.1.0"></script>
+    <script src="app.js?v=1.2.0"></script>
 </body>
-
-</html>
-
-
 </html>

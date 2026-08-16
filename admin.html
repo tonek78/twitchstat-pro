@@ -203,6 +203,40 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Submitted User Reports Card -->
+            <div class="col-12">
+                <div class="chart-card glass-panel border border-warning-subtle">
+                    <div class="chart-header d-flex justify-content-between align-items-center mb-3">
+                        <div class="chart-title d-flex align-items-center gap-2">
+                            <span class="chart-icon">🚩</span>
+                            <h3 class="fs-5 m-0 text-warning">Beküldött Hibajelentések & Visszajelzések</h3>
+                        </div>
+                        <span class="badge bg-warning-subtle text-warning border fs-7" id="reportCountBadge">0 bejelentés</span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover align-middle mb-0 small">
+                            <thead>
+                                <tr class="text-muted border-bottom border-secondary-subtle">
+                                    <th>ID / Dátum</th>
+                                    <th>Típus</th>
+                                    <th>Érintett</th>
+                                    <th>Leírás</th>
+                                    <th>Elérhetőség</th>
+                                    <th>Státusz</th>
+                                    <th class="text-end">Művelet</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminReportsTableBody">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-3">Hibajelentések betöltése...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -262,8 +296,12 @@
             document.getElementById('adminDashboardContent').style.display = 'block';
 
             fetchAdminStats();
+            fetchAdminReports();
             if (refreshInterval) clearInterval(refreshInterval);
-            refreshInterval = setInterval(fetchAdminStats, 10000);
+            refreshInterval = setInterval(() => {
+                fetchAdminStats();
+                fetchAdminReports();
+            }, 10000);
         }
 
         async function fetchAdminStats() {
@@ -476,6 +514,87 @@
                     plugins: { legend: { position: 'right', labels: { color: '#9a9ab0', font: { size: 11 } } } }
                 }
             });
+        }
+
+        async function fetchAdminReports() {
+            const token = getAdminToken();
+            if (!token) return;
+
+            try {
+                const res = await fetch('/api/admin/reports', {
+                    headers: { 'x-admin-token': token }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.success) {
+                    renderAdminReports(data.reports || []);
+                }
+            } catch (err) {
+                console.error('Fetch Reports Error:', err);
+            }
+        }
+
+        function renderAdminReports(reports) {
+            const tbody = document.getElementById('adminReportsTableBody');
+            const badge = document.getElementById('reportCountBadge');
+            if (!tbody) return;
+
+            if (badge) badge.innerText = `${reports.length} bejelentés`;
+
+            if (reports.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Még nincs beküldött hibajelentés.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            reports.forEach(r => {
+                const d = new Date(r.date).toLocaleString('hu-HU', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const isResolved = r.status === 'Lezárt';
+                const statusBadge = isResolved
+                    ? '<span class="badge bg-success-subtle text-success border">✅ Lezárt</span>'
+                    : '<span class="badge bg-danger-subtle text-danger border">🔥 Nyitott</span>';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <span class="font-monospace text-muted small">${r.id}</span><br>
+                        <span class="text-light-50 fs-8">${d}</span>
+                    </td>
+                    <td><span class="badge bg-dark border text-warning">${r.type}</span></td>
+                    <td class="fw-semibold text-light">${r.streamer}</td>
+                    <td style="max-width: 280px;" class="text-wrap">${r.description}</td>
+                    <td class="text-muted font-monospace small">${r.email}</td>
+                    <td>${statusBadge}</td>
+                    <td class="text-end">
+                        <button onclick="toggleReportStatus('${r.id}')" class="btn btn-sm ${isResolved ? 'btn-outline-secondary' : 'btn-outline-success'} font-monospace">
+                            ${isResolved ? 'Újranyitás' : 'Lezárás'}
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function toggleReportStatus(reportId) {
+            const token = getAdminToken();
+            if (!token) return;
+
+            try {
+                const res = await fetch('/api/admin/reports/resolve', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-admin-token': token
+                    },
+                    body: JSON.stringify({ report_id: reportId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    fetchAdminReports();
+                }
+            } catch (err) {
+                console.error('Toggle Report Error:', err);
+            }
         }
 
         // Attach Logout Event Listener
