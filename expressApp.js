@@ -682,7 +682,7 @@ router.post('/webhooks/discord/test', async (req, res) => {
 });
 
 // --- 4. Admin Authentication & Analytics Stats Endpoints ---
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Samsung78';
 const ADMIN_AUTH_TOKEN = 'admin-secret-token-twitchstat-2026';
 
 router.post('/admin/login', (req, res) => {
