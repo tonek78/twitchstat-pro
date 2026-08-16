@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TwitchStat PRO - OBS Goal Progress Bar Overlay</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* Transparent Canvas for OBS / Streamlabs Browser Source */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            background: transparent !important;
+            overflow: hidden;
+            font-family: var(--widget-font, 'Outfit', sans-serif);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .goal-container {
+            width: 100%;
+            max-width: 480px;
+            padding: 14px 20px;
+            background: var(--widget-bg, rgba(12, 12, 18, 0.88));
+            border: 1px solid var(--widget-border, rgba(255, 255, 255, 0.12));
+            border-radius: 18px;
+            color: var(--widget-color, #f4f4f8);
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .goal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .goal-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .goal-numbers {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--widget-color, #ffffff);
+        }
+
+        .goal-numbers span.current {
+            color: var(--widget-accent, #00ff88);
+        }
+
+        /* Progress Bar Track & Fill */
+        .progress-track {
+            position: relative;
+            width: 100%;
+            height: 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--widget-primary, #9146ff) 0%, var(--widget-accent, #00ff88) 100%);
+            border-radius: 10px;
+            transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 12px var(--widget-glow, rgba(0, 255, 136, 0.6));
+        }
+
+        .goal-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 600;
+        }
+
+        .percent-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 6px;
+            color: var(--widget-accent, #00ff88);
+            font-weight: 800;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="goal-container" id="goalContainer">
+        <div class="goal-header">
+            <div class="goal-title" id="goalTitle">
+                <span>🎯</span> <span id="titleText">KÖVETŐ CÉL</span>
+            </div>
+            <div class="goal-numbers">
+                <span class="current" id="currentVal">--</span> / <span id="targetVal">100 000</span>
+            </div>
+        </div>
+
+        <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="goal-footer">
+            <span id="footerBrand">TwitchStat PRO Goal Tracker</span>
+            <span class="percent-badge" id="percentBadge">0%</span>
+        </div>
+    </div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const root = document.documentElement;
+
+    const streamer = params.get('streamer') || params.get('channel') || 'thevr';
+    const targetGoal = parseInt(params.get('target') || '1000000', 10);
+    const title = params.get('title') || 'Követő Cél';
+
+    document.getElementById('titleText').textContent = title.toUpperCase();
+    document.getElementById('targetVal').textContent = Number(targetGoal).toLocaleString('hu-HU');
+
+    // Apply URL custom styling options
+    if (params.get('color')) root.style.setProperty('--widget-color', '#' + params.get('color').replace('#', ''));
+    if (params.get('accent')) {
+        const accentHex = '#' + params.get('accent').replace('#', '');
+        root.style.setProperty('--widget-accent', accentHex);
+        root.style.setProperty('--widget-glow', accentHex + 'aa');
+    }
+    if (params.get('primary')) root.style.setProperty('--widget-primary', '#' + params.get('primary').replace('#', ''));
+    if (params.get('bg') === 'transparent') {
+        root.style.setProperty('--widget-bg', 'transparent');
+        document.getElementById('goalContainer').style.border = 'none';
+        document.getElementById('goalContainer').style.boxShadow = 'none';
+    } else if (params.get('bg')) {
+        root.style.setProperty('--widget-bg', '#' + params.get('bg').replace('#', ''));
+    }
+
+    const currentValEl = document.getElementById('currentVal');
+    const fillEl = document.getElementById('progressFill');
+    const percentEl = document.getElementById('percentBadge');
+
+    async function fetchGoalStats() {
+        try {
+            const res = await fetch(`/api/overlays/live-stats/${encodeURIComponent(streamer)}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            
+            const current = data.followers || 0;
+            currentValEl.textContent = Number(current).toLocaleString('hu-HU');
+
+            const pct = Math.min(100, Math.max(0, (current / targetGoal) * 100));
+            fillEl.style.width = `${pct.toFixed(1)}%`;
+            percentEl.textContent = `${pct.toFixed(1)}%`;
+        } catch (err) {
+            console.error('Goal Overlay fetch error:', err);
+        }
+    }
+
+    fetchGoalStats();
+    setInterval(fetchGoalStats, 5000);
+</script>
+
+</body>
+</html>

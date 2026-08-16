@@ -209,12 +209,48 @@
                         <img id="categoryBoxArt" class="rounded shadow border border-secondary" src="" alt="Category Box Art" style="width: 100px; height: 133px; object-fit: cover;">
                         <div class="category-header-info flex-grow-1 text-center text-md-start">
                             <h2 id="categoryName" class="fs-3 fw-bold mb-2">Játék Neve</h2>
-                            <div class="category-stats-pills d-flex flex-wrap gap-3 justify-content-center justify-content-md-start">
+                            <div class="category-stats-pills d-flex flex-wrap gap-3 justify-content-center justify-content-md-start mb-3">
                                 <div class="badge bg-purple-subtle text-purple border p-2 d-flex align-items-center gap-2 fs-6">
                                     <span>👥</span> <span id="catTotalViewers">0</span> <span class="fw-normal" data-i18n="cat_viewers">Élő Néző</span>
                                 </div>
                                 <div class="badge bg-cyan-subtle text-cyan border p-2 d-flex align-items-center gap-2 fs-6">
                                     <span>📺</span> <span id="catActiveStreams">0</span> <span class="fw-normal" data-i18n="cat_active_streams">Aktív Csatorna</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Insights: Growth Potential & Best Time to Stream -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-6">
+                            <div class="p-3 rounded bg-black-20 border border-secondary-subtle h-100">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span>🚀</span>
+                                    <h4 class="fs-6 fw-bold m-0">Növekedési Potenciál Index</h4>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between my-2">
+                                    <span class="fs-4 fw-bold text-success" id="catGrowthIndex">85%</span>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle" id="catGrowthLabel">🚀 Kiemelkedő Potenciál</span>
+                                </div>
+                                <p class="small text-muted m-0" id="catCompetitionLevel">Alacsony Telítettség / Magas Nézői Kereslet</p>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="p-3 rounded bg-black-20 border border-secondary-subtle h-100">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span>⏰</span>
+                                    <h4 class="fs-6 fw-bold m-0">Legjobb Adásindítási Idősáv (Aranyórák)</h4>
+                                </div>
+                                <div class="d-flex flex-column gap-1 small text-muted" id="catBestHoursList">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-bold text-light">18:00 - 21:00</span>
+                                        <span class="text-success font-monospace">98% hatékonyság</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-bold text-light">21:00 - 00:00</span>
+                                        <span class="text-info font-monospace">92% hatékonyság</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -501,6 +537,43 @@
                                         </div>
                                         <button id="setupDiscordWebhookBtn" class="btn btn-sm btn-outline-secondary text-light fw-semibold w-100">
                                             🔔 Discord Webhook Tesztelése
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 4. OBS Goal Progress Bar Card -->
+                                <div class="col-12 col-md-6">
+                                    <div class="p-3 rounded bg-black-20 h-100 d-flex flex-column justify-content-between border border-secondary-subtle">
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2 mb-2">
+                                                <span class="fs-5">🎯</span>
+                                                <h4 class="fs-6 fw-bold m-0">OBS Goal Progress Bar Widget</h4>
+                                            </div>
+                                            <p class="small text-muted mb-3">Beágyazható célkövető animált sáv OBS-be élő százalékkal.</p>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <button id="copyObsGoalBarBtn" class="btn btn-sm btn-outline-success text-light fw-semibold flex-grow-1">
+                                                📋 Goal Bar URL Másolása
+                                            </button>
+                                            <a id="previewGoalBarBtn" href="/overlay/goal-bar.html?streamer=thevr&target=1000000" target="_blank" class="btn btn-sm btn-outline-light fs-7">
+                                                🔍 Előnézet
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 5. Social Milestone Card Generator -->
+                                <div class="col-12 col-md-6">
+                                    <div class="p-3 rounded bg-black-20 h-100 d-flex flex-column justify-content-between border border-secondary-subtle">
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2 mb-2">
+                                                <span class="fs-5">📸</span>
+                                                <h4 class="fs-6 fw-bold m-0">Social Milestone Grafika Generátor</h4>
+                                            </div>
+                                            <p class="small text-muted mb-3">Látványos közösségi kártya kép letöltése Instagram/Twitter megosztáshoz.</p>
+                                        </div>
+                                        <button id="generateSocialCardBtn" class="btn btn-sm btn-outline-warning text-light fw-semibold w-100">
+                                            🖼️ Mérföldkő Kártya Generálása
                                         </button>
                                     </div>
                                 </div>

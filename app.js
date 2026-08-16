@@ -838,8 +838,28 @@ document.addEventListener('DOMContentLoaded', () => {
             catTotalViewersEl.innerText = formatNumber(data.total_viewers || 0);
             catActiveStreamsEl.innerText = formatNumber(data.stream_count || 0);
 
+            // Populate Growth Index & Insights
+            const catGrowthIndexEl = document.getElementById('catGrowthIndex');
+            const catGrowthLabelEl = document.getElementById('catGrowthLabel');
+            const catCompetitionLevelEl = document.getElementById('catCompetitionLevel');
+            const catBestHoursListEl = document.getElementById('catBestHoursList');
+
+            if (catGrowthIndexEl) catGrowthIndexEl.innerText = `${data.growth_potential_index || 85}%`;
+            if (catGrowthLabelEl) catGrowthLabelEl.innerText = data.growth_label || '🚀 Kiemelkedő Potenciál';
+            if (catCompetitionLevelEl) catCompetitionLevelEl.innerText = data.competition_level || 'Alacsony Telítettség / Magas Nézői Kereslet';
+
+            if (catBestHoursListEl && data.best_hours) {
+                catBestHoursListEl.innerHTML = data.best_hours.map(bh => `
+                    <div class="d-flex justify-content-between align-items-center border-bottom border-secondary-subtle py-1">
+                        <span class="fw-bold text-light">${bh.hour}</span>
+                        <span class="text-success font-monospace fw-bold">${bh.score} hatékonyság</span>
+                    </div>
+                `).join('');
+            }
+
             renderCategoryStreamers(data.streams || []);
         } catch (e) {
+            console.error('Category Modal error:', e);
             categoryStreamersGrid.innerHTML = '<div class="col-12 text-center py-4 text-danger">Nem sikerült betölteni a kategória adatait.</div>';
         }
     }
@@ -1248,6 +1268,112 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (err) {
                 showToast('Hálózati hiba a Discord webhook küldésekor.', '❌');
             }
+        });
+    }
+
+    // --- 4. OBS Goal Progress Bar Overlay Builder Handler ---
+    const copyObsGoalBarBtn = document.getElementById('copyObsGoalBarBtn');
+    const previewGoalBarBtn = document.getElementById('previewGoalBarBtn');
+
+    if (copyObsGoalBarBtn) {
+        copyObsGoalBarBtn.addEventListener('click', () => {
+            const streamer = currentStreamerData ? currentStreamerData.login : 'thevr';
+            const currentFollowers = currentStreamerData ? currentStreamerData.followers : 842000;
+            const defaultGoal = currentFollowers > 500000 ? 1000000 : (currentFollowers > 100000 ? 500000 : 100000);
+
+            const inputGoal = prompt(`Add meg a kitűzött követő célt a(z) ${streamer} csatornához:`, defaultGoal);
+            if (!inputGoal) return;
+
+            const targetVal = parseInt(inputGoal.replace(/\s/g, ''), 10) || defaultGoal;
+            const goalUrl = `${window.location.origin}/overlay/goal-bar.html?streamer=${encodeURIComponent(streamer)}&target=${targetVal}&title=Követő+Cél&color=ffffff&accent=00ff88`;
+
+            if (previewGoalBarBtn) {
+                previewGoalBarBtn.setAttribute('href', `/overlay/goal-bar.html?streamer=${encodeURIComponent(streamer)}&target=${targetVal}`);
+            }
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(goalUrl).then(() => {
+                    showToast(`OBS Goal Bar URL kimásolva (${targetVal.toLocaleString('hu-HU')} cél)!`, '🎯');
+                });
+            } else {
+                showToast(`Goal Bar URL: ${goalUrl}`, '🎯');
+            }
+        });
+    }
+
+    // --- 5. Social Milestone Card Generator Handler ---
+    const generateSocialCardBtn = document.getElementById('generateSocialCardBtn');
+
+    if (generateSocialCardBtn) {
+        generateSocialCardBtn.addEventListener('click', () => {
+            const streamer = currentStreamerData ? currentStreamerData.name : 'TheVR';
+            const followers = currentStreamerData ? currentStreamerData.followers : 842000;
+
+            showToast('Mérföldkő kártya generálása...', '🎨');
+
+            // Create Canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = 1200;
+            canvas.height = 630;
+            const ctx = canvas.getContext('2d');
+
+            // Dark Neon Background
+            const bgGradient = ctx.createLinearGradient(0, 0, 1200, 630);
+            bgGradient.addColorStop(0, '#0c0c12');
+            bgGradient.addColorStop(0.5, '#141424');
+            bgGradient.addColorStop(1, '#070709');
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, 1200, 630);
+
+            // Glowing Purple Orb Effect
+            const orbGradient = ctx.createRadialGradient(1000, 150, 50, 1000, 150, 450);
+            orbGradient.addColorStop(0, 'rgba(145, 70, 255, 0.4)');
+            orbGradient.addColorStop(1, 'rgba(145, 70, 255, 0)');
+            ctx.fillStyle = orbGradient;
+            ctx.fillRect(0, 0, 1200, 630);
+
+            // Border Frame
+            ctx.strokeStyle = 'rgba(145, 70, 255, 0.5)';
+            ctx.lineWidth = 8;
+            ctx.strokeRect(30, 30, 1140, 570);
+
+            // Brand Header
+            ctx.fillStyle = '#9146ff';
+            ctx.font = 'bold 36px Outfit, sans-serif';
+            ctx.fillText('TWITCHSTAT PRO', 80, 100);
+
+            ctx.fillStyle = '#9a9ab0';
+            ctx.font = '600 22px "Plus Jakarta Sans", sans-serif';
+            ctx.fillText('OFFICIAL MILESTONE BADGE', 80, 135);
+
+            // Streamer Name
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'extrabold 72px Outfit, sans-serif';
+            ctx.fillText(streamer, 80, 260);
+
+            // Milestone Badge / Value
+            ctx.fillStyle = '#00ff88';
+            ctx.font = 'extrabold 90px Outfit, sans-serif';
+            ctx.fillText(`${Number(followers).toLocaleString('hu-HU')} KÖVETŐ!`, 80, 370);
+
+            // Subtitle Celebration
+            ctx.fillStyle = '#f4f4f8';
+            ctx.font = '600 28px "Plus Jakarta Sans", sans-serif';
+            ctx.fillText('🎉 Hivatalos közösségi mérföldkő elérve!', 80, 440);
+
+            // Footer URL
+            ctx.fillStyle = '#ad72ff';
+            ctx.font = 'bold 24px Outfit, sans-serif';
+            ctx.fillText('https://twitchstat.pro', 80, 540);
+
+            // Download Image
+            const dataUrl = canvas.toDataURL('image/png');
+            const anchor = document.createElement('a');
+            anchor.href = dataUrl;
+            anchor.download = `Milestone_${streamer.replace(/\s+/g, '_')}_TwitchStatPRO.png`;
+            anchor.click();
+
+            showToast('🖼️ Mérföldkő kártya letöltve!', '✅');
         });
     }
 
