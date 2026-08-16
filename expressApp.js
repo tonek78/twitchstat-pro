@@ -678,6 +678,9 @@ router.post('/webhooks/discord/test', async (req, res) => {
         }
     } catch (err) {
         return res.status(500).json({ error: `Hálózati hiba a Discord Webhook küldésekor: ${err.message}` });
+    }
+});
+
 // --- 4. Admin Analytics Stats Endpoint ---
 router.get('/admin/stats', (req, res) => {
     const now = Date.now();
