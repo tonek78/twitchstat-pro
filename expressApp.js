@@ -249,66 +249,71 @@ router.get('/streamer', async (req, res) => {
     const streamerName = req.query.q || 'TheVR';
     const loginName = streamerName.toLowerCase().trim();
 
-    console.log(`🔎 Streamer adatok lekérése: ${loginName}`);
+    try {
+        console.log(`🔎 Streamer adatok lekérése: ${loginName}`);
 
-    const userRes = await makeHelixCall('users', { login: loginName });
+        const userRes = await makeHelixCall('users', { login: loginName });
 
-    if (!userRes || userRes.status !== 200 || !userRes.data || !userRes.data.data || userRes.data.data.length === 0) {
-        console.warn(`⚠️ Twitch API nem adta vissza '${loginName}' adatait. Demó mód használata...`);
-        return res.json(generateFallbackData(loginName, lastAuthError));
+        if (!userRes || userRes.status !== 200 || !userRes.data || !userRes.data.data || userRes.data.data.length === 0) {
+            console.warn(`⚠️ Twitch API nem adta vissza '${loginName}' adatait. Demó mód használata...`);
+            return res.json(generateFallbackData(loginName, lastAuthError));
+        }
+
+        const user = userRes.data.data[0];
+        const userId = user.id;
+
+        const channelRes = await makeHelixCall('channels', { broadcaster_id: userId });
+        const channelInfo = (channelRes && channelRes.data && channelRes.data.data && channelRes.data.data.length > 0)
+            ? channelRes.data.data[0]
+            : {};
+
+        const followersRes = await makeHelixCall('channels/followers', { broadcaster_id: userId });
+        const followerCount = (followersRes && followersRes.data && followersRes.data.total !== undefined)
+            ? followersRes.data.total
+            : -1;
+
+        const streamRes = await makeHelixCall('streams', { user_login: loginName });
+        let isLive = false;
+        let streamData = {};
+
+        if (streamRes && streamRes.data && streamRes.data.data && streamRes.data.data.length > 0) {
+            isLive = true;
+            streamData = streamRes.data.data[0];
+        }
+
+        console.log(`✅ Valós Twitch adatok sikeresen lekérve: ${user.display_name} (Élő: ${isLive})`);
+
+        // Twitch API deprecated user.view_count to 0 for all channels. Calculate realistic view count:
+        const calculatedViewCount = (user.view_count && user.view_count > 0)
+            ? user.view_count
+            : (followerCount > 0 ? Math.round(followerCount * (120 + (user.login.length * 7 % 40))) : 5200000);
+
+        return res.json({
+            name: user.display_name,
+            login: user.login,
+            avatar: user.profile_image_url,
+            description: user.description,
+            created_at: user.created_at,
+            view_count: calculatedViewCount,
+
+            followers: followerCount,
+
+            is_live: isLive,
+            viewers: isLive ? streamData.viewer_count : 0,
+            started_at: isLive ? streamData.started_at : null,
+            thumbnail_url: isLive ? (streamData.thumbnail_url || '').replace('{width}x{height}', '400x225') : null,
+
+            game_name: channelInfo.game_name || '',
+            title: channelInfo.title || '',
+            tags: channelInfo.tags || [],
+            language: channelInfo.broadcaster_language || 'hu',
+            is_demo: false,
+            auth_error: null
+        });
+    } catch (err) {
+        console.error(`❌ Hiba a /streamer végponton (${loginName}):`, err.message);
+        return res.json(generateFallbackData(loginName, err.message));
     }
-
-    const user = userRes.data.data[0];
-    const userId = user.id;
-
-    const channelRes = await makeHelixCall('channels', { broadcaster_id: userId });
-    const channelInfo = (channelRes && channelRes.data && channelRes.data.data && channelRes.data.data.length > 0)
-        ? channelRes.data.data[0]
-        : {};
-
-    const followersRes = await makeHelixCall('channels/followers', { broadcaster_id: userId });
-    const followerCount = (followersRes && followersRes.data && followersRes.data.total !== undefined)
-        ? followersRes.data.total
-        : -1;
-
-    const streamRes = await makeHelixCall('streams', { user_login: loginName });
-    let isLive = false;
-    let streamData = {};
-
-    if (streamRes && streamRes.data && streamRes.data.data && streamRes.data.data.length > 0) {
-        isLive = true;
-        streamData = streamRes.data.data[0];
-    }
-
-    console.log(`✅ Valós Twitch adatok sikeresen lekérve: ${user.display_name} (Élő: ${isLive})`);
-
-    // Twitch API deprecated user.view_count to 0 for all channels. Calculate realistic view count:
-    const calculatedViewCount = (user.view_count && user.view_count > 0)
-        ? user.view_count
-        : (fallback.view_count || (followerCount > 0 ? Math.round(followerCount * (120 + (user.login.length * 7 % 40))) : 5200000));
-
-    return res.json({
-        name: user.display_name,
-        login: user.login,
-        avatar: user.profile_image_url,
-        description: user.description,
-        created_at: user.created_at,
-        view_count: calculatedViewCount,
-
-        followers: followerCount,
-
-        is_live: isLive,
-        viewers: isLive ? streamData.viewer_count : 0,
-        started_at: isLive ? streamData.started_at : null,
-        thumbnail_url: isLive ? (streamData.thumbnail_url || '').replace('{width}x{height}', '400x225') : null,
-
-        game_name: channelInfo.game_name || '',
-        title: channelInfo.title || '',
-        tags: channelInfo.tags || [],
-        language: channelInfo.broadcaster_language || 'hu',
-        is_demo: false,
-        auth_error: null
-    });
 });
 
 // --- API Endpoint: Category & Top Streams Data ---
