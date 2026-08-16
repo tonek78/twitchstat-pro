@@ -681,8 +681,24 @@ router.post('/webhooks/discord/test', async (req, res) => {
     }
 });
 
-// --- 4. Admin Analytics Stats Endpoint ---
+// --- 4. Admin Authentication & Analytics Stats Endpoints ---
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_AUTH_TOKEN = 'admin-secret-token-twitchstat-2026';
+
+router.post('/admin/login', (req, res) => {
+    const { password } = req.body;
+    if (!password || password.trim() !== ADMIN_PASSWORD) {
+        return res.status(401).json({ success: false, error: 'Érvénytelen admin jelszó!' });
+    }
+    return res.json({ success: true, token: ADMIN_AUTH_TOKEN, message: 'Sikeres admin bejelentkezés!' });
+});
+
 router.get('/admin/stats', (req, res) => {
+    const token = req.headers['x-admin-token'] || req.query.token;
+    if (token !== ADMIN_AUTH_TOKEN) {
+        return res.status(401).json({ error: 'Érvénytelen admin token. Bejelentkezés szükséges!' });
+    }
+
     const now = Date.now();
     let activeNow = 0;
     analyticsStore.active_sessions.forEach((ts, ip) => {
