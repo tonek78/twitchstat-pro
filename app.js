@@ -1246,10 +1246,76 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.save(`MediaKit_${profile.login || 'streamer'}_TwitchStatPRO.pdf`);
     }
 
+    // --- Custom Action Modal Helper ---
+    function showCustomPromptModal({ title, icon, desc, defaultValue = '', placeholder = '' }) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('customActionModal');
+            const iconEl = document.getElementById('actionModalIcon');
+            const titleEl = document.getElementById('actionModalTitle');
+            const descEl = document.getElementById('actionModalDesc');
+            const inputEl = document.getElementById('actionModalInput');
+            const closeBtn = document.getElementById('closeActionModalBtn');
+            const cancelBtn = document.getElementById('cancelActionModalBtn');
+            const confirmBtn = document.getElementById('confirmActionModalBtn');
+
+            if (!modal) {
+                resolve(null);
+                return;
+            }
+
+            if (iconEl) iconEl.textContent = icon || '⚙️';
+            if (titleEl) titleEl.textContent = title || 'Művelet Megerősítése';
+            if (descEl) descEl.textContent = desc || 'Adja meg a kért adatot:';
+            if (inputEl) {
+                inputEl.value = defaultValue;
+                inputEl.placeholder = placeholder;
+            }
+
+            modal.style.display = 'block';
+            setTimeout(() => { if (inputEl) inputEl.focus(); }, 100);
+
+            const cleanup = () => {
+                modal.style.display = 'none';
+                confirmBtn.removeEventListener('click', onConfirm);
+                cancelBtn.removeEventListener('click', onCancel);
+                closeBtn.removeEventListener('click', onCancel);
+            };
+
+            const onConfirm = () => {
+                const val = inputEl ? inputEl.value : '';
+                cleanup();
+                resolve(val);
+            };
+
+            const onCancel = () => {
+                cleanup();
+                resolve(null);
+            };
+
+            confirmBtn.addEventListener('click', onConfirm);
+            cancelBtn.addEventListener('click', onCancel);
+            closeBtn.addEventListener('click', onCancel);
+
+            if (inputEl) {
+                inputEl.onkeydown = (e) => {
+                    if (e.key === 'Enter') onConfirm();
+                    if (e.key === 'Escape') onCancel();
+                };
+            }
+        });
+    }
+
     if (setupDiscordWebhookBtn) {
         setupDiscordWebhookBtn.addEventListener('click', async () => {
             const streamer = currentStreamerData ? currentStreamerData.name : 'TheVR';
-            const webhookUrl = prompt(`Adja meg a Discord csatornája Webhook URL-jét az élő adás értesítésekhez (${streamer}):`);
+            
+            const webhookUrl = await showCustomPromptModal({
+                title: 'Discord Webhook Beállítása',
+                icon: '🤖',
+                desc: `Adja meg a Discord csatornája Webhook URL-jét az élő adás értesítésekhez (${streamer}):`,
+                placeholder: 'https://discord.com/api/webhooks/...'
+            });
+
             if (!webhookUrl || !webhookUrl.trim()) return;
 
             showToast('Discord teszt értesítés küldése...', '⏳');
@@ -1276,12 +1342,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const previewGoalBarBtn = document.getElementById('previewGoalBarBtn');
 
     if (copyObsGoalBarBtn) {
-        copyObsGoalBarBtn.addEventListener('click', () => {
+        copyObsGoalBarBtn.addEventListener('click', async () => {
             const streamer = currentStreamerData ? currentStreamerData.login : 'thevr';
             const currentFollowers = currentStreamerData ? currentStreamerData.followers : 842000;
             const defaultGoal = currentFollowers > 500000 ? 1000000 : (currentFollowers > 100000 ? 500000 : 100000);
 
-            const inputGoal = prompt(`Add meg a kitűzött követő célt a(z) ${streamer} csatornához:`, defaultGoal);
+            const inputGoal = await showCustomPromptModal({
+                title: 'OBS Goal Bar Követő Cél',
+                icon: '🎯',
+                desc: `Add meg a kitűzött követő célt a(z) ${streamer} csatornához:`,
+                defaultValue: defaultGoal.toString(),
+                placeholder: 'Pl. 1000000'
+            });
+
             if (!inputGoal) return;
 
             const targetVal = parseInt(inputGoal.replace(/\s/g, ''), 10) || defaultGoal;
