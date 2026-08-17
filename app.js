@@ -196,8 +196,29 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadFavoritesFromStorage() {
         try {
             const stored = localStorage.getItem('twitchstat_favorites');
-            const parsed = stored ? JSON.parse(stored) : [];
-            return Array.isArray(parsed) ? parsed.filter(f => f && f.login) : [];
+            if (!stored) return [];
+            const parsed = JSON.parse(stored);
+            if (!Array.isArray(parsed)) return [];
+
+            return parsed.map(item => {
+                if (typeof item === 'string') {
+                    const cleanLogin = item.toLowerCase().trim();
+                    return {
+                        name: item.charAt(0).toUpperCase() + item.slice(1),
+                        login: cleanLogin,
+                        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(item)}&background=9146FF&color=fff&size=128`
+                    };
+                } else if (item && typeof item === 'object' && (item.login || item.name)) {
+                    const loginStr = (item.login || item.name || '').toLowerCase().trim();
+                    if (!loginStr) return null;
+                    return {
+                        name: item.name || loginStr,
+                        login: loginStr,
+                        avatar: item.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name || loginStr)}&background=9146FF&color=fff&size=128`
+                    };
+                }
+                return null;
+            }).filter(Boolean);
         } catch (e) {
             console.error('Failed to load favorites from localStorage', e);
             return [];
@@ -252,22 +273,24 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleFavorite() {
         if (!currentStreamerData) return;
 
-        const login = currentStreamerData.login;
-        const index = favorites.findIndex(f => f.login === login);
+        const login = (currentStreamerData.login || '').toLowerCase().trim();
+        if (!login) return;
+        const displayName = currentStreamerData.name || login;
+        const index = favorites.findIndex(f => (f.login || '').toLowerCase() === login);
 
         if (index > -1) {
             favorites.splice(index, 1);
             if (favToggleBtn) favToggleBtn.classList.remove('active');
-            const msg = getText('toast_fav_remove', { name: currentStreamerData.name || login });
+            const msg = getText('toast_fav_remove', { name: displayName });
             showToast(msg, '🗑️');
         } else {
             favorites.push({
-                name: currentStreamerData.name || login,
-                login: currentStreamerData.login,
-                avatar: currentStreamerData.avatar
+                name: displayName,
+                login: login,
+                avatar: currentStreamerData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=9146FF&color=fff&size=128`
             });
             if (favToggleBtn) favToggleBtn.classList.add('active');
-            const msg = getText('toast_fav_add', { name: currentStreamerData.name || login });
+            const msg = getText('toast_fav_add', { name: displayName });
             showToast(msg, '⭐');
         }
 
@@ -276,10 +299,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function removeFavorite(login) {
-        const targetFav = favorites.find(f => f.login === login);
+        const targetLogin = (login || '').toLowerCase().trim();
+        const targetFav = favorites.find(f => (f.login || '').toLowerCase() === targetLogin);
         const name = targetFav ? targetFav.name : login;
-        favorites = favorites.filter(f => f.login !== login);
-        if (currentStreamerData && currentStreamerData.login === login && favToggleBtn) {
+        favorites = favorites.filter(f => (f.login || '').toLowerCase() !== targetLogin);
+
+        if (currentStreamerData && (currentStreamerData.login || '').toLowerCase() === targetLogin && favToggleBtn) {
             favToggleBtn.classList.remove('active');
         }
         saveFavoritesToStorage();
@@ -290,9 +315,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateFavoriteButtonState() {
         if (!currentStreamerData || !favToggleBtn) return;
-        const isFav = favorites.some(f => f.login === currentStreamerData.login);
-        if (isFav) {
+        const currentLogin = (currentStreamerData.login || '').toLowerCase().trim();
+        const favIndex = favorites.findIndex(f => (f.login || '').toLowerCase() === currentLogin);
+
+        if (favIndex > -1) {
             favToggleBtn.classList.add('active');
+            // Keep avatar and name updated in favorites list
+            if (currentStreamerData.avatar && currentStreamerData.name) {
+                favorites[favIndex].name = currentStreamerData.name;
+                favorites[favIndex].avatar = currentStreamerData.avatar;
+                saveFavoritesToStorage();
+                renderFavoritesUI();
+            }
         } else {
             favToggleBtn.classList.remove('active');
         }
