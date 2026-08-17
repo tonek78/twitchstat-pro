@@ -109,6 +109,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (langSelector) langSelector.value = currentLang;
 
+        renderFavoritesUI();
+
         // Re-render charts if data exists
         if (currentStreamerData) {
             const baseViewers = currentStreamerData.is_live ? currentStreamerData.viewers : (currentStreamerData.followers > 0 ? Math.round(currentStreamerData.followers * 0.03) : 2500);
@@ -194,8 +196,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadFavoritesFromStorage() {
         try {
             const stored = localStorage.getItem('twitchstat_favorites');
-            return stored ? JSON.parse(stored) : [];
+            const parsed = stored ? JSON.parse(stored) : [];
+            return Array.isArray(parsed) ? parsed.filter(f => f && f.login) : [];
         } catch (e) {
+            console.error('Failed to load favorites from localStorage', e);
             return [];
         }
     }
@@ -209,19 +213,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderFavoritesUI() {
+        if (!favoritesList) return;
         favoritesList.innerHTML = '';
 
-        if (favorites.length === 0) {
-            favoritesList.innerHTML = '<span class="empty-fav-msg">Kattints a streamer profilján lévő csillagra a kedvencekhez adáshoz!</span>';
+        if (!favorites || favorites.length === 0) {
+            favoritesList.innerHTML = `<span class="empty-fav-msg text-muted small fs-7" data-i18n="empty_fav_msg">${getText('empty_fav_msg')}</span>`;
             return;
         }
 
         favorites.forEach(fav => {
             const chip = document.createElement('div');
             chip.className = 'fav-chip';
+            const avatarSrc = fav.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(fav.name || fav.login)}&background=9146FF&color=fff&size=128`;
+            const favName = fav.name || fav.login;
             chip.innerHTML = `
-                <img class="fav-avatar" src="${fav.avatar}" alt="${fav.name}">
-                <span class="fav-name">${fav.name}</span>
+                <img class="fav-avatar" src="${avatarSrc}" alt="${favName}">
+                <span class="fav-name">${favName}</span>
                 <button class="remove-fav-btn" title="Eltávolítás">&times;</button>
             `;
 
@@ -250,16 +257,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (index > -1) {
             favorites.splice(index, 1);
-            favToggleBtn.classList.remove('active');
-            showToast(`${currentStreamerData.name} eltávolítva a kedvencek közül.`, '🗑️');
+            if (favToggleBtn) favToggleBtn.classList.remove('active');
+            const msg = getText('toast_fav_remove', { name: currentStreamerData.name || login });
+            showToast(msg, '🗑️');
         } else {
             favorites.push({
-                name: currentStreamerData.name,
+                name: currentStreamerData.name || login,
                 login: currentStreamerData.login,
                 avatar: currentStreamerData.avatar
             });
-            favToggleBtn.classList.add('active');
-            showToast(`${currentStreamerData.name} hozzáadva a kedvencekhez!`, '⭐');
+            if (favToggleBtn) favToggleBtn.classList.add('active');
+            const msg = getText('toast_fav_add', { name: currentStreamerData.name || login });
+            showToast(msg, '⭐');
         }
 
         saveFavoritesToStorage();
@@ -267,17 +276,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function removeFavorite(login) {
+        const targetFav = favorites.find(f => f.login === login);
+        const name = targetFav ? targetFav.name : login;
         favorites = favorites.filter(f => f.login !== login);
-        if (currentStreamerData && currentStreamerData.login === login) {
+        if (currentStreamerData && currentStreamerData.login === login && favToggleBtn) {
             favToggleBtn.classList.remove('active');
         }
         saveFavoritesToStorage();
         renderFavoritesUI();
-        showToast(`Kedvenc eltávolítva.`, 'ℹ️');
+        const msg = getText('toast_fav_remove', { name: name });
+        showToast(msg, '🗑️');
     }
 
     function updateFavoriteButtonState() {
-        if (!currentStreamerData) return;
+        if (!currentStreamerData || !favToggleBtn) return;
         const isFav = favorites.some(f => f.login === currentStreamerData.login);
         if (isFav) {
             favToggleBtn.classList.add('active');
@@ -1538,6 +1550,9 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Hálózati hiba a hibajelentés küldésekor.', '❌');
         }
     };
+
+    // Render initial favorites list from localStorage
+    renderFavoritesUI();
 
     // Check URL Parameters for ?q=streamer or ?openReport=1
     const urlParams = new URLSearchParams(window.location.search);
