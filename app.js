@@ -561,15 +561,28 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderSubsChart(baseViewers) {
         const ctx = document.getElementById('subsChart').getContext('2d');
 
-        const estTotalSubs = Math.max(150, Math.round(baseViewers * (0.15 + Math.random() * 0.1)));
-        const tier1 = Math.round(estTotalSubs * 0.82);
-        const tier2 = Math.round(estTotalSubs * 0.12);
-        const tier3 = Math.round(estTotalSubs * 0.06);
+        const followers = (currentStreamerData && currentStreamerData.followers > 0) ? currentStreamerData.followers : 0;
+        const login = (currentStreamerData && currentStreamerData.login) ? currentStreamerData.login : '';
+
+        // Deterministic seed multiplier based on streamer login so estimations remain consistent per channel
+        let hash = 0;
+        for (let i = 0; i < login.length; i++) {
+            hash = (hash << 5) - hash + login.charCodeAt(i);
+            hash |= 0;
+        }
+        const seedMultiplier = 0.88 + (Math.abs(hash) % 35) / 100; // range 0.88 to 1.23
+
+        const effectiveFollowers = followers > 0 ? followers : (baseViewers > 0 ? baseViewers * 40 : 5000);
+        const estTotalSubs = Math.max(15, Math.round((effectiveFollowers * 0.018 + baseViewers * 0.7) * seedMultiplier));
+
+        const tier1 = Math.round(estTotalSubs * 0.89);
+        const tier2 = Math.round(estTotalSubs * 0.08);
+        const tier3 = Math.max(1, estTotalSubs - tier1 - tier2);
 
         subsChartInstance = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: [`Tier 1 (${tier1})`, `Tier 2 (${tier2})`, `Tier 3 (${tier3})`],
+                labels: [`Tier 1 (${tier1.toLocaleString('hu-HU')})`, `Tier 2 (${tier2.toLocaleString('hu-HU')})`, `Tier 3 (${tier3.toLocaleString('hu-HU')})`],
                 datasets: [{
                     data: [tier1, tier2, tier3],
                     backgroundColor: ['#9146ff', '#00f0ff', '#ff0055'],
